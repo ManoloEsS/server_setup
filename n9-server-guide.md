@@ -1,7 +1,6 @@
 # Minihyper N9 Self-Hosted Server Guide
 
 > Turn your N9 into a file server (Samba), Git server (Gitea), and ad-blocker (Pi-hole), accessible from anywhere via Tailscale.
-
 ---
 
 ## What you'll need
