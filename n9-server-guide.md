@@ -614,7 +614,7 @@ All three should be running.
 | Test | How |
 |---|---|
 | **File share** | On your main computer's file manager, go to `smb://192.168.1.100/files`. Enter your username and Samba password. Create a file. Check on the N9: `ls /srv/files/` |
-| **Git repos** | Visit `http://100.x.x.x:3000` in your browser. Create a repo. Clone it on your main computer. Make a commit. Push. |
+| **Git repos** | Visit `http://100.x.x.x:3000` in your browser. Create a repo. Clone it on your main computer. Make a commit. Push. Test SSH too: `git remote add test ssh://git@100.x.x.x:222/youruser/yourrepo.git && git push test main` |
 | **Ad blocking** | Visit `http://100.x.x.x/admin`. Check the dashboard — you should see queries coming in. Run `dig doubleclick.net` from your main computer — it should resolve to `0.0.0.0`. |
 | **Remote access** | Disconnect from home WiFi. Connect via phone hotspot or another network. Make sure Tailscale is running on your device. Mount the Samba share using the Tailscale IP: `smb://100.x.x.x/files`. Visit Gitea at `http://100.x.x.x:3000`. Everything works. |
 
@@ -829,15 +829,16 @@ Desktop (main workstation)
 ## Quick reference
 
 | What | Address |
-|---|---|
+|---|---|---|
 | N9 local IP | `192.168.1.100` |
 | N9 Tailscale IP | `100.x.x.x` (from `tailscale ip -4`) |
 | Samba share (local) | `smb://192.168.1.100/files` |
 | Samba share (remote) | `smb://100.x.x.x/files` |
-| Gitea | `http://100.x.x.x:3000` |
+| Gitea (HTTP) | `http://100.x.x.x:3000` |
+| Gitea (SSH) | `ssh://git@100.x.x.x:222` |
 | Pi-hole admin | `http://100.x.x.x/admin` |
-| SSH (local) | `ssh yourusername@192.168.1.100` |
-| SSH (remote) | `ssh yourusername@100.x.x.x` |
+| SSH (local, host) | `ssh yourusername@192.168.1.100` |
+| SSH (remote, host) | `ssh yourusername@100.x.x.x` |
 | Netgear admin | `http://192.168.1.1` |
 | XB7 admin | `http://10.0.0.1` |
 | Tailscale admin | `https://login.tailscale.com/admin` |
