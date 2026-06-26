@@ -332,6 +332,34 @@ After installation, create a user account. Now you can create repos and push cod
 git remote add origin http://100.x.x.x:3000/youruser/yourrepo.git
 ```
 
+### SSH access (port 222)
+
+Gitea's SSH runs on port **222** (mapped from container port 22 in the compose file). Use it to push without a password once your SSH key is added:
+
+1. **Add your SSH public key** to Gitea: **Settings → SSH/GPG Keys → Add Key** (paste the contents of `~/.ssh/id_ed25519.pub` or `~/.ssh/id_rsa.pub`)
+
+2. **Add the remote**:
+   ```bash
+   git remote add gitea ssh://git@100.x.x.x:222/youruser/yourrepo.git
+   ```
+
+3. **Push to both Gitea and GitHub** — create a global alias:
+   ```bash
+   git config --global alias.pushall '!git remote | xargs -L1 git push'
+   ```
+
+   Now you have three options:
+   | Command | What it does |
+   |---|---|
+   | `git push origin` | Push only to GitHub |
+   | `git push gitea` | Push only to Gitea |
+   | `git pushall` | Push to all remotes |
+
+> **If SSH asks for a password**: the key wasn't added to Gitea's `authorized_keys` file. On the server, run:
+> ```bash
+> docker exec gitea su git -c '/usr/local/bin/gitea admin regenerate keys'
+> ```
+
 ---
 
 ## Step 9: Set up Pi-hole (ad-blocker) with Docker
