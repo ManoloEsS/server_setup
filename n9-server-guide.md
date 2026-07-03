@@ -146,31 +146,42 @@ It should respond. You're now connected through Tailscale.
 
 ---
 
-## Step 4: Disable systemd-resolved (needed for Pi-hole)
+## Step 4: Configure systemd-resolved (forward DNS to Pi-hole)
 
-Ubuntu uses a built-in DNS resolver that occupies port 53. Pi-hole needs this port.
-
-```bash
-sudo systemctl disable systemd-resolved
-sudo systemctl stop systemd-resolved
-```
-
-Replace the DNS config so the N9 can still resolve domains:
+Pi-hole runs inside Docker and handles DNS. Instead of disabling systemd-resolved, we configure it to forward DNS queries to Pi-hole on localhost. This keeps Ubuntu's DNS management (per-interface config, caching) while Pi-hole does ad-blocking.
 
 ```bash
-sudo nano /etc/resolv.conf
+# Enable systemd-resolved (it's pre-installed but disabled on Ubuntu Server)
+sudo systemctl enable --now systemd-resolved
 ```
 
-Delete everything in the file and replace with:
+Find your active ethernet interface:
 
+```bash
+ip link show | grep -E '^[0-9]:' | grep -v lo | grep -v docker | grep -v tailscale | grep -v veth | grep -v br-
 ```
-nameserver 1.1.1.1
-nameserver 8.8.8.8
+
+Look for the `UP` interface — typically `enp2s0` or `enpXsY`. Replace `enp2s0` below with whatever yours is called:
+
+```bash
+# Set Pi-hole on localhost as the DNS server for this interface
+sudo resolvectl dns enp2s0 127.0.0.1
+
+# Apply DNS to all domains (".~" means "match everything")
+sudo resolvectl domain enp2s0 "~."
+
+# Link /etc/resolv.conf to systemd-resolved's stub resolver
+sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 ```
 
-Save (`Ctrl+O`, then `Enter`) and exit (`Ctrl+X`).
+Verify DNS resolution works:
 
-> **Nano basics**: Ctrl+O saves, Ctrl+X exits. Use arrow keys to navigate. It's a simple text editor — don't overthink it.
+```bash
+resolvectl query google.com
+ping -c 1 google.com
+```
+
+> **Why this approach instead of disabling systemd-resolved?** The older method (disabling systemd-resolved and hardcoding `1.1.1.1` in `/etc/resolv.conf`) works but bypasses per-interface DNS management. With systemd-resolved active, you can set different DNS per interface (useful if you add VPNs or Tailscale split DNS later). Pi-hole's Docker container with `network_mode: host` binds directly to `0.0.0.0:53`, so `127.0.0.1:53` on the host forwards straight to Pi-hole — no port conflict.
 
 ---
 
@@ -465,7 +476,7 @@ getent ahostsv4 doubleclick.net
 
 Should return `0.0.0.0` if Pi-hole is blocking. If it returns a real IP, Pi-hole isn't being used as your DNS — see Step 10 and Step 12 for DNS configuration.
 
-> **If Pi-hole won't start**: you likely forgot to disable `systemd-resolved` in Step 4. Go back and check. The error will mention port 53 being in use.
+> **If Pi-hole won't start**: run `sudo ss -tlnp | grep :53` to check if port 53 is in use. If a process other than `pihole-FTL` is on port 53, run `sudo systemctl stop <process>` — but with systemd-resolved configured as in Step 4, there should be no conflict (systemd-resolved listens on `127.0.0.53`, not `0.0.0.0:53`).
 
 ---
 
@@ -715,9 +726,19 @@ This makes Pi-hole follow you even when you're not on your home network.
 1. Go to https://login.tailscale.com/admin/dns
 2. Under **Nameservers**, click **Add nameserver**
 3. Select **Custom** and enter your N9's **Tailscale IP** (e.g., `100.x.x.x`)
-4. Save
+4. **Do NOT add any other nameservers** (no public DNS like `1.1.1.1`) — Pi-hole handles upstream forwarding internally
+5. **Enable "Override local DNS"** — this toggle forces all Tailscale devices to use the custom nameserver, even on other networks (cellular, hotel WiFi, etc.). Without this, remote devices use their local network's DNS and Pi-hole is ignored.
+6. Save
+
+> **Why no fallback?** If both Pi-hole and a public DNS (e.g., `1.1.1.1`) are configured as global nameservers, Tailscale queries both in parallel and uses the fastest response. The public DNS will always respond faster from a remote device than Pi-hole over a Tailscale tunnel, so ad-laden queries would bypass Pi-hole entirely. Instead, let Pi-hole itself handle forwarding to upstream DNS (Step 9 has `PIHOLE_DNS_: "1.1.1.1;8.8.8.8"`).
 
 Now any device connected to your Tailnet (even remotely) will use Pi-hole for DNS. Ad-blocking follows you everywhere.
+
+> **Note on the N9 host's own DNS**: The N9 itself resolves DNS via systemd-resolved → `127.0.0.1` → Pi-hole (configured in Step 4). This is separate from the Tailscale DNS setting. Other Tailscale devices (desktops, laptops, phones) use the custom nameserver set here (`100.x.x.x`). Both paths go through the same Pi-hole — ad-blocking works everywhere.
+
+> **If you previously used the old approach** (disabling systemd-resolved, hardcoding `1.1.1.1`), and you switch to the new approach (Step 4), you must also run `sudo tailscale set --accept-dns=false` on the N9. This prevents Tailscale from overwriting `/etc/resolv.conf` with its MagicDNS resolver, which would bypass Pi-hole for the host itself.
+
+> **iOS-specific**: After enabling Override, go to the iPhone Tailscale app → **Settings** → **DNS** and make sure **"Use Tailscale DNS"** is ON. Also temporarily disable **iCloud Private Relay** (Settings → your name → iCloud → Private Relay) for testing, as it bypasses Tailscale DNS entirely for Safari traffic.
 
 ---
 
@@ -740,7 +761,7 @@ Replace `100.x.x.x` with your N9's actual Tailscale IP. Now you can use `n9` any
 | `smb://100.x.x.x/files` | `smb://n9/files` |
 | `http://100.x.x.x/admin` | `http://n9/admin` |
 
-### 14.2 Add an SSH config shortcut
+### 14.2 Add SSH config shortcut + Tramp keepalive
 
 For even shorter SSH commands, add this to `~/.ssh/config`:
 
@@ -750,26 +771,361 @@ Host n9
     User yourusername
 ```
 
-Then you can just type `ssh n9` — no username, no IP, no `-i` key flag needed. SCP and rsync work too (`scp file n9:~/`).
+Recommended additions for Emacs Tramp performance over Tailscale:
+
+```
+Host 100.*.*.* *.tailscale.com
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+    ControlMaster auto
+    ControlPath ~/.ssh/controlmasters/%r@%h:%p
+    ControlPersist 10m
+```
+
+Create the ControlMaster directory:
+
+```bash
+mkdir -p ~/.ssh/controlmasters
+```
+
+> **What this does**: `ServerAliveInterval` prevents long-running Tramp sessions from timing out. `ControlMaster` reuses a single SSH connection for multiple sessions — subsequent Tramp connections are instant (no re-authentication). `ControlPersist` keeps the connection alive for 10 minutes after the last session closes.
+
+Now you can just type `ssh n9` — no username, no IP, no `-i` key flag needed. SCP and rsync work too (`scp file n9:~/`).
 
 ---
 
-## Conflict-free workflow
+## Step 15: Install Syncthing on the N9 (optional)
 
-To avoid merge conflicts when working on multiple machines:
+Syncthing keeps files in sync between your devices with local copies — no network mounts, no latency for LSP, full offline editing. Install it if you want code and org files available locally on both home and workstation without Samba mounts.
+
+### 15.1 Install Syncthing
+
+```bash
+sudo apt install syncthing
+systemctl --user enable --now syncthing
+sudo loginctl enable-linger tlaloch
+```
+
+> **`enable-linger` is critical** — it keeps Syncthing running after you log out. Without this, Syncthing stops when the SSH session ends.
+
+### 15.2 Configure Syncthing Web UI
+
+Syncthing's admin interface is at `http://127.0.0.1:8384`. Since the N9 has no browser, use an SSH tunnel from your desktop:
+
+```bash
+ssh -L 8385:127.0.0.1:8384 n9
+```
+
+Then open `http://127.0.0.1:8385` in your desktop browser.
+
+1. **Actions → Settings** → set device name to `n9-server`
+2. **Show ID** — copy this device ID (needed when adding homebase from other devices)
+
+### 15.3 Firewall note
+
+If you have UFW enabled, allow Syncthing's ports:
+
+```bash
+sudo ufw allow 22000/tcp
+sudo ufw allow 21027/udp
+```
+
+---
+
+## Step 16: Syncthing device topology
+
+The three machines form a mesh:
 
 ```
-Desktop (main workstation)
-  +-- Mounts Samba drive from N9 (main file access)
-  +-- Clones/pushes to Gitea (dev code)
-  |
-  +-- Laptop SSH's into Desktop (via Tailscale)
-      (Laptop never mounts Samba directly)
+n9-server (100.77.72.6) ── Syncthing: org files ──┐
+                                                     ├── home (100.75.18.27)
+homebase also has: workspace backup ────────────────┤
+                                                     └── workstation (100.69.124.19)
 ```
 
-- **Code**: clone repos from Gitea, work locally, commit and push. Intentional commits handle conflicts.
-- **General files**: mount the Samba drive on your desktop only. Access from laptop via SSH/RDP/rsync into the desktop.
-- **Laptop**: VS Code Remote SSH into the desktop over Tailscale for a full dev environment.
+### Folder-to-device mapping
+
+| Folder | homebase | home | workstation |
+|--------|----------|------|-------------|
+| **workspace** (`~/workspace/github.com/ManoloEsS/`) | backup (optional) | source + sync | source + sync |
+| **org** (varies per machine) | source of truth | local copy | local copy |
+
+### Device IDs and addresses
+
+Use the **remote device's** Tailscale IP when adding a device:
+
+| From Web UI | Adding | Address |
+|-------------|--------|---------|
+| homebase | home | `tcp://100.75.18.27:22000, dynamic` |
+| homebase | workstation | `tcp://100.69.124.19:22000, dynamic` |
+| home | homebase | `tcp://100.77.72.6:22000, dynamic` |
+| home | workstation | `tcp://100.69.124.19:22000, dynamic` |
+| workstation | homebase | `tcp://100.77.72.6:22000, dynamic` |
+| workstation | home | `tcp://100.75.18.27:22000, dynamic` |
+
+> The `, dynamic` fallback lets Syncthing use global discovery if the Tailscale tunnel isn't available. For maximum security (traffic stays inside Tailscale), omit `dynamic`.
+
+### Sharing a folder
+
+1. On the source machine's Web UI, click **Add Folder**
+2. Set **Folder Label** and **Folder Path**
+3. **Sharing** tab → check the target devices
+4. **File Versioning** → `Trash Can` (30 days recommended) — protects against accidental changes
+5. **Ignore Patterns** tab → add patterns (see below)
+6. On the target machine's Web UI, **Accept** the incoming folder and set the local path
+
+---
+
+## Step 17: Syncthing ignore patterns
+
+These prevent build artifacts, secrets, and OS junk from being synced. The patterns below are designed for Go/JS/Python/Lua projects.
+
+Paste into **Ignore Patterns** tab for the `workspace` folder:
+
+```
+# Build artifacts
+node_modules/
+dist/
+build/
+.next/
+__pycache__/
+*.pyc
+*.pyo
+vendor/
+target/
+
+# IDE / editor
+.opencode/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment / secrets
+.env
+.env.local
+*.env
+*.pem
+*.key
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git (already cloned locally on each machine)
+.git/
+
+# Binary / large artifacts
+*.bin
+*.exe
+*.dll
+*.so
+*.dylib
+*.iso
+```
+
+For the `org` folder, ignore patterns can be minimal — just OS files and backups:
+
+```
+*~
+*.swp
+.DS_Store
+```
+
+---
+
+## Step 18: Emacs/Doom configuration
+
+This documents the Doom Emacs configuration shared between home and workstation. Both machines have identical configs in `~/.config/doom/`.
+
+### 18.1 init.el — modules
+
+The following language modules are enabled with LSP:
+
+```elisp
+(go +lsp)          ; Go — uses gopls
+(javascript +lsp)  ; JS/TS — uses typescript-language-server
+(python +lsp)      ; Python — uses pyright
+(lua +lsp)         ; Lua — uses lua-language-server
+```
+
+Key non-language modules:
+
+```elisp
+(lsp +eglot)       ; Use Eglot as the LSP client
+(format +onsave)   ; Auto-format on save via apheleia
+tramp              ; Remote file editing over SSH
+tree-sitter        ; Syntax highlighting engine
+(corfu +orderless) ; Completion popup
+vertico            ; Search/picker framework
+```
+
+### 18.2 config.el — LSP servers and formatters
+
+**Go formatting** — uses `goimports` (formats + organizes imports) instead of gopls formatting:
+
+```elisp
+(add-hook 'go-mode-hook (lambda () (setq-local +format-with 'goimports)))
+(add-hook 'go-ts-mode-hook (lambda () (setq-local +format-with 'goimports)))
+```
+
+**Python formatting** — uses `ruff` (fast Rust-based formatter):
+
+```elisp
+(after! apheleia
+  (setf (alist-get 'python-mode apheleia-mode-alist) 'ruff)
+  (setf (alist-get 'python-ts-mode apheleia-mode-alist) 'ruff))
+```
+
+**Org directory** — now points to the local Syncthing-synced copy:
+
+```elisp
+(setq org-directory "~/org")
+```
+
+### 18.3 LSP servers to install
+
+On **home** and **workstation**, install the language servers:
+
+```bash
+# TypeScript/JavaScript
+npm install -g typescript typescript-language-server
+
+# Python
+npm install -g pyright
+
+# Lua
+curl -sL "https://github.com/LuaLS/lua-language-server/releases/download/3.18.2/lua-language-server-3.18.2-linux-x64.tar.gz" | tar xz
+cp lua-language-server-3.18.2-linux-x64/bin/lua-language-server ~/.local/bin/
+rm -rf lua-language-server-3.18.2-linux-x64
+
+# Formatters
+mise use -g ruff@latest       # Python formatter
+sudo pacman -S shfmt shellcheck  # Optional: shell formatting
+```
+
+> LSP servers must be on `$PATH` for Eglot to find them. Check with: `which typescript-language-server`, `which pyright`, `which lua-language-server`.
+
+### 18.4 After modifying init.el
+
+Run on both machines:
+
+```bash
+doom sync
+```
+
+Then restart Emacs.
+
+---
+
+## Step 19: Syncthing first-time setup checklist
+
+| Machine | What to do |
+|---------|------------|
+| **homebase** | Install Syncthing (Step 15), configure via SSH tunnel, share `org` folder |
+| **home** | Install Syncthing (`sudo pacman -S syncthing`), `systemctl --user enable --now syncthing`, accept `org` folder, set path to `~/org` |
+| **workstation** | Same as home, accept both `workspace` and `org` folders |
+| **all** | Update Doom `org-directory` to `~/org`, install LSP servers |
+
+### Typical gotchas
+
+- **`rem_workspace` or similar wrong-named folder appears**: Edit the folder in Syncthing Web UI → **Folder Path** → change to the correct existing path
+- **"Temporary failure resolving" on homebase**: Run `resolvectl status | grep 'resolv.conf mode'` — should show `stub`, not `foreign`. Fix: `sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf && sudo systemctl restart systemd-resolved`
+- **Pi-hole stops blocking**: Check `docker exec pihole grep listeningMode /etc/pihole/pihole.toml` — must be `"ALL"`, not `"LOCAL"`
+- **Syncthing stops after SSH logout**: You missed `sudo loginctl enable-linger tlaloch` — run it now
+
+---
+
+## Step 20: DNS update mode script
+
+The `dns-update-mode` script helps manage homebase's DNS when you need to run system updates without going through Pi-hole. It also includes diagnostics for fixing Pi-hole remote access.
+
+### 20.1 Installation
+
+The script lives at `~/.local/bin/dns-update-mode` on homebase.
+
+After installing, allow passwordless `sudo` for `resolvectl` (needed for toggling DNS):
+
+```bash
+echo "%sudo ALL=(ALL) NOPASSWD: /usr/bin/resolvectl" | sudo tee /etc/sudoers.d/resolvectl
+sudo chmod 440 /etc/sudoers.d/resolvectl
+```
+
+### 20.2 Usage
+
+```bash
+# Run a command with public DNS (e.g. apt update), auto-restores Pi-hole after
+dns-update-mode update "sudo apt update && sudo apt upgrade -y"
+
+# Manually switch to public DNS
+dns-update-mode on
+
+# Manually restore Pi-hole DNS
+dns-update-mode off
+
+# Check current DNS config
+dns-update-mode status
+
+# Diagnose Pi-hole remote access
+dns-update-mode diagnose
+
+# Fix Pi-hole listeningMode (required for remote Tailscale DNS queries)
+dns-update-mode fix-pihole
+```
+
+### 20.3 What the diagnose command checks
+
+| Check | What it looks for |
+|-------|-------------------|
+| Listening mode | `ALL` (accepts remote queries) vs `LOCAL` (local subnet only) |
+| Port 53 | Pi-hole should be the sole listener |
+| DNS resolution | `google.com` resolves; `doubleclick.net` returns `0.0.0.0` (blocked) |
+| Tailscale DNS | Whether `--accept-dns` is enabled |
+
+### 20.4 When remote Pi-hole stops working
+
+Run on homebase:
+
+```bash
+dns-update-mode diagnose
+```
+
+If it shows `listeningMode = LOCAL`, run:
+
+```bash
+dns-update-mode fix-pihole
+```
+
+This is the most common reason Pi-hole stops working from remote Tailscale devices — the setting occasionally resets after Pi-hole container updates or restarts.
+
+---
+
+## Conflict-free workflow (Syncthing)
+
+Syncthing replaces the old Samba-centric workflow. Each machine has its own local copies of workspace and org files, updated automatically in the background.
+
+```
+homebase (server)
+  +-- Samba share (iPhone access, media, random file sharing)
+  +-- Syncthing: org files (source of truth)
+  +-- Syncthing: workspace (optional backup copy — skip if you don't need it)
+
+home (Arch desktop)
+  +-- Syncthing: workspace local copy — full LSP, instant builds
+  +-- Syncthing: org local copy — fast org-mode
+  +-- Git push/pull to Gitea/GitHub (intentional commit workflow)
+
+workstation (Arch desktop)
+  +-- Syncthing: workspace local copy — same as home
+  +-- Syncthing: org local copy — same as home
+  +-- Git push/pull to Gitea/GitHub (same repos)
+```
+
+- **Code**: work locally, commit + push. Syncthing is NOT a substitute for Git — use Git for version control.
+- **Files (org, documents)**: Syncthing handles bidirectional sync automatically. Versioning (Trash Can) protects against accidents.
+- **Samba still exists** for non-Syncthing devices — iPhone, media center, sending a single file to a friend.
+- **Avoid editing the same file on two machines simultaneously** — you'll get a `.syncthing.ConflictingCopy` file. Pick one, delete the other.
 
 ---
 
@@ -787,12 +1143,22 @@ Desktop (main workstation)
 | Reboot the N9 | `sudo reboot` |
 | View Pi-hole logs | `docker logs pihole` |
 | View Gitea logs | `docker logs gitea` |
+| Check Syncthing status | `systemctl --user status syncthing` |
+| Syncthing Web UI tunnel | `ssh -L 8384:127.0.0.1:8384 n9` then `http://127.0.0.1:8384` |
+| View DNS resolver config | `resolvectl status` |
+| Test Pi-hole DNS | `resolvectl query doubleclick.net` (should return `0.0.0.0`) |
+| Diagnose Pi-hole remote access | `dns-update-mode diagnose` |
+| Fix Pi-hole listening mode | `dns-update-mode fix-pihole` |
+| System update (bypass Pi-hole) | `dns-update-mode update "sudo apt update && sudo apt upgrade -y"` |
+| Allow remote DNS through UFW | `sudo ufw allow in on tailscale0 to any port 53 proto udp && sudo ufw allow in on tailscale0 to any port 53 proto tcp` |
+| Check Tailscale DNS config | `https://login.tailscale.com/admin/dns` |
 
 ---
 
 ## Data layout on the N9
 
 ```
+~/.config/syncthing/        Syncthing config (created on first run)
 /srv/
  |-- files/                  Your Samba file share
  |-- docker/
@@ -811,16 +1177,19 @@ Desktop (main workstation)
 
 | Problem | Fix |
 |---|---|
-| **Pi-hole won't start** | You forgot to disable `systemd-resolved` (Step 4). Run those commands again. Check with: `sudo lsof -i :53` |
+| **Pi-hole won't start** | Port 53 conflict. Check `sudo ss -tlnp | grep :53`. With systemd-resolved active (Step 4), there should be no conflict as it listens on `127.0.0.53`. |
 | **Can't mount Samba share remotely** | Make sure both devices have Tailscale running. Use the `100.x.x.x` IP, not `192.168.1.100`. |
 | **Gitea page won't load** | Wait 30 seconds after starting. Check with `docker ps` that the container is healthy. |
 | **Forgot Samba password** | `sudo smbpasswd -a yourusername` to reset it. |
 | **Tailscale not connecting** | Run `tailscale status`. Check https://login.tailscale.com/admin/machines — both devices should show as connected. |
 | **Can't SSH after reboot** | Check the N9 is powered on. The IP might have changed if DHCP reservation failed — check the Netgear admin for the N9's current IP. |
 | **Ad-blocking not working on a device** | Make sure that device is connected to the Netgear (not the XB7's WiFi). Check the device's DNS — it should be `192.168.1.100`. |
+| **Pi-hole not blocking ads on remote Tailscale devices (iPhone, laptop away from home)** | Three things to check: (1) Tailscale admin console → **"Override local DNS"** must be ON, (2) devices must have **"Use Tailscale DNS"** enabled in their Tailscale app, (3) **do not** add a public DNS fallback (like `1.1.1.1`) as a second nameserver — it races with Pi-hole and lets ads through. See Step 13. |
 | **Pi-hole logs show "ignoring query from non-local network"** | Pi-hole's `listeningMode` is still set to `LOCAL`. Change it to `ALL` (see Step 9: "Critical: Fix listening mode for Tailscale"). Restart Pi-hole after. |
-| **DNS queries from Tailscale not resolving** | Same fix as above — `listeningMode` must be `ALL`. Also verify that Tailscale DNS is configured in the Tailscale admin console (Step 13). |
-| **DNSMASQ_LISTENING env var doesn't take effect** | Pi-hole v6 doesn't always honor `DNSMASQ_LISTENING: "all"`. Edit `pihole.toml` directly inside the container: `docker exec pihole sed -i 's/listeningMode = "LOCAL"/listeningMode = "ALL"/' /etc/pihole/pihole.toml && docker restart pihole` |
+| **DNS queries from Tailscale not resolving** | Same fix as above — `listeningMode` must be `ALL`. Also verify that Tailscale DNS is configured in the Tailscale admin console (Step 13). Run `dns-update-mode diagnose` on homebase to check. |
+| **DNSMASQ_LISTENING env var doesn't take effect** | Pi-hole v6 doesn't always honor `DNSMASQ_LISTENING: "all"`. Edit `pihole.toml` directly inside the container: `dns-update-mode fix-pihole` (does this automatically) |
+| **`dns-update-mode` complains about permissions** | Missing sudoers rule. Run `echo "%sudo ALL=(ALL) NOPASSWD: /usr/bin/resolvectl" | sudo tee /etc/sudoers.d/resolvectl && sudo chmod 440 /etc/sudoers.d/resolvectl` on homebase (one-time setup). |
+| **apt update fails with "Temporary failure resolving"** | DNS is misconfigured. Run `dns-update-mode update "sudo apt update"` to temporarily use public DNS, or run `dns-update-mode diagnose` to troubleshoot. |
 | **N9 IP changed after reboot** | DHCP reservation on the Netgear didn't take. Re-check Step 10.3. |
 | **Xfinity cameras stopped working** | You accidentally enabled bridge mode on the XB7. Disable bridge mode — XB7 must stay in router mode. |
 
@@ -842,3 +1211,7 @@ Desktop (main workstation)
 | Netgear admin | `http://192.168.1.1` |
 | XB7 admin | `http://10.0.0.1` |
 | Tailscale admin | `https://login.tailscale.com/admin` |
+| Tailscale DNS config | `https://login.tailscale.com/admin/dns` |
+| Syncthing Web UI (local) | `http://127.0.0.1:8384` |
+| Syncthing Web UI (tunnel) | `ssh -L 8385:127.0.0.1:8384 n9` → `http://127.0.0.1:8385` |
+| Syncthing default port | `22000/tcp` (peer sync), `21027/udp` (discovery) |
