@@ -1101,6 +1101,91 @@ This is the most common reason Pi-hole stops working from remote Tailscale devic
 
 ---
 
+## Step 21: Set up a new client machine (fresh Omarchy install)
+
+Use this to bring a brand-new Omarchy install to the same state as this desktop — SSH to N9, Syncthing, dotfiles, and Neovim. Everything the new machine needs lives in GitHub/Gitea or in the N9 workspace snapshot at `/srv/files/workspace`.
+
+### 21.1 Tailscale
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+```
+
+Log in with your Tailscale account, then verify the N9 is visible:
+
+```bash
+tailscale status
+```
+
+N9 should appear as `homebase` with IP `100.77.72.6`.
+
+### 21.2 Hosts file and SSH config
+
+```bash
+echo '100.77.72.6      n9' | sudo tee -a /etc/hosts
+mkdir -p ~/.ssh/controlmasters
+```
+
+Copy the SSH config block from **Step 14.2** into `~/.ssh/config`, then test:
+
+```bash
+ssh n9 echo connected
+```
+
+### 21.3 SSH keys (GitHub and Gitea)
+
+```bash
+ssh-keygen -t ed25519 -C "you@example.com"
+```
+
+- **GitHub**: add the pubkey (`~/.ssh/id_ed25519.pub`) at `https://github.com/settings/keys`.
+- **Gitea**: add the same pubkey at `http://n9:3000/user/settings/keys`.
+
+Test both:
+
+```bash
+ssh -T git@github.com
+ssh -p 222 git@n9
+```
+
+### 21.4 Syncthing
+
+```bash
+sudo pacman -S syncthing        # or your distro's package
+systemctl --user enable --now syncthing
+```
+
+- Open the web UI: `http://127.0.0.1:8384`.
+- **Add Remote Device** — the N9 (`homebase`), device ID `5RQ672R-7VYA66O-N77ZAUS-SUFIQ65-BUF7YLV-BQWTWT5-FMHIO5G-5WZCJQV`, address `tcp://100.77.72.6:22000, dynamic`.
+- **Share the `org` folder** (folder ID `2l9rt-tecrk`) at path `~/org`.
+- **Share the `workspace` folder** (folder ID `gyra3-p2nen`) at path `~/workspace/github.com/ManoloEsS` (optional — see Step 16).
+- On the N9, accept the new device in its Syncthing GUI — tunnel in with `ssh -L 8385:127.0.0.1:8384 n9` then open `http://127.0.0.1:8385`.
+
+If you'd rather pull a one-time copy of the workspace instead of syncing it continuously:
+
+```bash
+rsync -aP --delete n9:/srv/files/workspace/ ~/workspace/
+```
+
+### 21.5 Dotfiles and Neovim
+
+```bash
+git clone git@github.com:ManoloEsS/dotfiles_omarchy_desktop.git ~/dotfiles_omarchy_desktop
+
+ln -sf ~/dotfiles_omarchy_desktop/tmuxomarchy/.tmux.conf ~/.tmux.conf
+ln -sf ~/dotfiles_omarchy_desktop/wezterm/.wezterm.lua ~/.wezterm.lua
+ln -sf ~/dotfiles_omarchy_desktop/pl10k/.p10k.zsh ~/.p10k.zsh
+
+git clone git@github.com:ManoloEsS/kickstart.nvim.git ~/.config/nvim
+```
+
+### 21.6 Samba mount (optional)
+
+Follow **Step 12 (Option B)** to auto-mount `/mnt/n9` so the N9 files live at `/mnt/n9`.
+
+---
+
 ## Conflict-free workflow (Syncthing)
 
 Syncthing replaces the old Samba-centric workflow. Each machine has its own local copies of workspace and org files, updated automatically in the background.
