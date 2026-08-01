@@ -839,7 +839,7 @@ The three machines form a mesh:
 ```
 n9-server (100.77.72.6) ── Syncthing: org files ──┐
                                                      ├── home (100.75.18.27)
-homebase also has: workspace backup ────────────────┤
+homebase also has: workspace snapshot (rsync) ─────────┤
                                                      └── workstation (100.69.124.19)
 ```
 
@@ -847,8 +847,10 @@ homebase also has: workspace backup ──────────────�
 
 | Folder | homebase | home | workstation |
 |--------|----------|------|-------------|
-| **workspace** (`~/workspace/github.com/ManoloEsS/`) | backup (optional) | source + sync | source + sync |
+| **workspace** (`~/workspace/github.com/ManoloEsS/`) | rsync snapshot only | source + sync | source + sync |
 | **org** (varies per machine) | source of truth | local copy | local copy |
+
+> homebase does **not** run a Syncthing folder for workspace — its backup is the rsync snapshot at `/srv/files/workspace`. New machines seed from it (see **Step 21.4**).
 
 ### Device IDs and addresses
 
@@ -1158,25 +1160,80 @@ systemctl --user enable --now syncthing
 
 - Open the web UI: `http://127.0.0.1:8384`.
 - **Add Remote Device** — the N9 (`homebase`), device ID `5RQ672R-7VYA66O-N77ZAUS-SUFIQ65-BUF7YLV-BQWTWT5-FMHIO5G-5WZCJQV`, address `tcp://100.77.72.6:22000, dynamic`.
-- **Share the `org` folder** (folder ID `2l9rt-tecrk`) at path `~/org`.
-- **Share the `workspace` folder** (folder ID `gyra3-p2nen`) at path `~/workspace/github.com/ManoloEsS` (optional — see Step 16).
 - On the N9, accept the new device in its Syncthing GUI — tunnel in with `ssh -L 8385:127.0.0.1:8384 n9` then open `http://127.0.0.1:8385`.
 
-If you'd rather pull a one-time copy of the workspace instead of syncing it continuously:
+#### org — sync from homebase
+
+homebase hosts the `org` folder as its source of truth. Add it on this machine:
+
+- **Add Folder** → folder ID `2l9rt-tecrk`, path `~/org` → **Sharing** tab → check `homebase`.
+
+#### workspace — seed from the N9 snapshot, then sync
+
+homebase does **not** host the workspace in Syncthing — its backup is the rsync snapshot at `/srv/files/workspace`. Seed it once from there, then register it as a normal Syncthing folder:
 
 ```bash
 rsync -aP --delete n9:/srv/files/workspace/ ~/workspace/
 ```
 
+- **Add Folder** → folder ID `gyra3-p2nen`, path `~/workspace/github.com/ManoloEsS` → **Sharing** tab → check the other devices that should keep it in sync.
+
+> **Replacing the old machine**: the new machine gets a brand-new Syncthing device ID. Once it's online, remove the retired device from each folder's **Sharing** tab on homebase and workstation (and from the device list) so it stops syncing.
+
 ### 21.5 Dotfiles and Neovim
+
+Clone the dotfiles repo, then install everything it manages:
 
 ```bash
 git clone git@github.com:ManoloEsS/dotfiles_omarchy_desktop.git ~/dotfiles_omarchy_desktop
+cd ~/dotfiles_omarchy_desktop
+```
 
-ln -sf ~/dotfiles_omarchy_desktop/tmuxomarchy/.tmux.conf ~/.tmux.conf
-ln -sf ~/dotfiles_omarchy_desktop/wezterm/.wezterm.lua ~/.wezterm.lua
-ln -sf ~/dotfiles_omarchy_desktop/pl10k/.p10k.zsh ~/.p10k.zsh
+Install base tools, Oh My Zsh, and set zsh as the default shell (needs an AUR helper such as `yay`):
 
+```bash
+./omarchy_scripts/install-dev-tools.sh
+```
+
+Install the Oh My Zsh plugins and powerlevel10k theme:
+
+```bash
+./omarchy_scripts/install-omz-plugins.sh
+```
+
+Symlink the managed configs with GNU stow (hypr, ncspot, tmux, wezterm, yazi, zsh, p10k):
+
+```bash
+sudo pacman -S stow
+./omarchy_scripts/stow-configs.sh
+```
+
+Wire up the configs the scripts don't cover:
+
+```bash
+# mise
+mkdir -p ~/.config/mise
+ln -sf ~/dotfiles_omarchy_desktop/mise/.config/mise/config.toml ~/.config/mise/config.toml
+
+# ghostty
+mkdir -p ~/.config/ghostty
+cp ~/dotfiles_omarchy_desktop/ghostty/.config/config ~/.config/ghostty/config
+
+# opencode
+mkdir -p ~/.config/opencode
+cp ~/dotfiles_omarchy_desktop/opencode/.config/opencode.json ~/.config/opencode/opencode.json
+cp -r ~/dotfiles_omarchy_desktop/opencode/.config/skills ~/.config/opencode/skills
+
+# claude skills
+mkdir -p ~/.claude/skills
+ln -sf ~/dotfiles_omarchy_desktop/.claude/skills/fullstack-static-scaffold ~/.claude/skills/fullstack-static-scaffold
+```
+
+Install tmux plugins (TPM) by starting tmux and pressing `prefix + I`.
+
+Clone Neovim (the kickstart fork):
+
+```bash
 git clone git@github.com:ManoloEsS/kickstart.nvim.git ~/.config/nvim
 ```
 
@@ -1194,7 +1251,7 @@ Syncthing replaces the old Samba-centric workflow. Each machine has its own loca
 homebase (server)
   +-- Samba share (iPhone access, media, random file sharing)
   +-- Syncthing: org files (source of truth)
-  +-- Syncthing: workspace (optional backup copy — skip if you don't need it)
+  +-- Workspace snapshot (rsync at /srv/files/workspace — not Syncthing)
 
 home (Arch desktop)
   +-- Syncthing: workspace local copy — full LSP, instant builds
@@ -1229,7 +1286,7 @@ workstation (Arch desktop)
 | View Pi-hole logs | `docker logs pihole` |
 | View Gitea logs | `docker logs gitea` |
 | Check Syncthing status | `systemctl --user status syncthing` |
-| Syncthing Web UI tunnel | `ssh -L 8384:127.0.0.1:8384 n9` then `http://127.0.0.1:8384` |
+| Syncthing Web UI tunnel | `ssh -L 8385:127.0.0.1:8384 n9` then `http://127.0.0.1:8385` |
 | View DNS resolver config | `resolvectl status` |
 | Test Pi-hole DNS | `resolvectl query doubleclick.net` (should return `0.0.0.0`) |
 | Diagnose Pi-hole remote access | `dns-update-mode diagnose` |
