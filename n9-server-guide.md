@@ -101,7 +101,9 @@ sudo ufw allow 445/tcp      # Samba
 sudo ufw allow 139/tcp      # Samba
 sudo ufw allow 3000/tcp     # Gitea
 sudo ufw allow 80/tcp       # Pi-hole admin
-sudo ufw allow 53           # Pi-hole DNS
+# Replace enp2s0 with the N9's active LAN interface if different
+sudo ufw allow in on enp2s0 from 192.168.1.0/24 to any port 53 proto udp
+sudo ufw allow in on enp2s0 from 192.168.1.0/24 to any port 53 proto tcp
 sudo ufw --force enable
 ```
 
@@ -144,15 +146,31 @@ It should respond. You're now connected through Tailscale.
 
 > **What's happening**: Tailscale creates an encrypted WireGuard tunnel directly between your devices. It works through home routers, hotel WiFi, corporate firewalls, and cellular networks. No ports opened on your router.
 
+Allow Pi-hole DNS queries from Tailscale clients:
+
+```bash
+sudo ufw allow in on tailscale0 to any port 53 proto udp
+sudo ufw allow in on tailscale0 to any port 53 proto tcp
+```
+
 ---
 
-## Step 4: Configure systemd-resolved (forward DNS to Pi-hole)
+## Step 4: Configure systemd-resolved (Pi-hole owns DNS)
 
-Pi-hole runs inside Docker and handles DNS. Instead of disabling systemd-resolved, we configure it to forward DNS queries to Pi-hole on localhost. This keeps Ubuntu's DNS management (per-interface config, caching) while Pi-hole does ad-blocking.
+Pi-hole runs inside Docker and handles DNS. Keep systemd-resolved for per-interface DNS management, but disable its local stub listener so Pi-hole can own host port 53.
 
 ```bash
 # Enable systemd-resolved (it's pre-installed but disabled on Ubuntu Server)
 sudo systemctl enable --now systemd-resolved
+```
+
+Release port 53 for Pi-hole while keeping systemd-resolved enabled:
+
+```bash
+sudo mkdir -p /etc/systemd/resolved.conf.d
+printf '%s\n' '[Resolve]' 'DNS=127.0.0.1' 'DNSStubListener=no' | sudo tee /etc/systemd/resolved.conf.d/pihole.conf
+sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+sudo systemctl restart systemd-resolved
 ```
 
 Find your active ethernet interface:
@@ -169,9 +187,6 @@ sudo resolvectl dns enp2s0 127.0.0.1
 
 # Apply DNS to all domains (".~" means "match everything")
 sudo resolvectl domain enp2s0 "~."
-
-# Link /etc/resolv.conf to systemd-resolved's stub resolver
-sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 ```
 
 Verify DNS resolution works:
@@ -181,7 +196,7 @@ resolvectl query google.com
 ping -c 1 google.com
 ```
 
-> **Why this approach instead of disabling systemd-resolved?** The older method (disabling systemd-resolved and hardcoding `1.1.1.1` in `/etc/resolv.conf`) works but bypasses per-interface DNS management. With systemd-resolved active, you can set different DNS per interface (useful if you add VPNs or Tailscale split DNS later). Pi-hole's Docker container with `network_mode: host` binds directly to `0.0.0.0:53`, so `127.0.0.1:53` on the host forwards straight to Pi-hole — no port conflict.
+> **Why this approach instead of disabling systemd-resolved?** The older method (disabling systemd-resolved and hardcoding `1.1.1.1` in `/etc/resolv.conf`) bypasses per-interface DNS management. Keeping systemd-resolved enabled preserves per-interface configuration and caching, while `DNSStubListener=no` releases port 53 for Pi-hole. The `/run/systemd/resolve/resolv.conf` link points local applications at Pi-hole on `127.0.0.1`.
 
 ---
 
@@ -476,7 +491,7 @@ getent ahostsv4 doubleclick.net
 
 Should return `0.0.0.0` if Pi-hole is blocking. If it returns a real IP, Pi-hole isn't being used as your DNS — see Step 10 and Step 12 for DNS configuration.
 
-> **If Pi-hole won't start**: run `sudo ss -tlnp | grep :53` to check if port 53 is in use. If a process other than `pihole-FTL` is on port 53, run `sudo systemctl stop <process>` — but with systemd-resolved configured as in Step 4, there should be no conflict (systemd-resolved listens on `127.0.0.53`, not `0.0.0.0:53`).
+> **If Pi-hole won't start**: run `sudo ss -lntup | grep ':53'` to check port 53. `pihole-FTL` should own the TCP and UDP listeners. If `systemd-resolved` appears, confirm `/etc/systemd/resolved.conf.d/pihole.conf` contains `DNSStubListener=no`, restart systemd-resolved, then restart the Pi-hole Compose service. Do not stop systemd-resolved or delete Pi-hole volumes.
 
 ---
 
@@ -725,7 +740,7 @@ This makes Pi-hole follow you even when you're not on your home network.
 
 1. Go to https://login.tailscale.com/admin/dns
 2. Under **Nameservers**, click **Add nameserver**
-3. Select **Custom** and enter your N9's **Tailscale IP** (e.g., `100.x.x.x`)
+3. Select **Custom** and enter your N9's **Tailscale IP** (`100.77.72.6` for this setup)
 4. **Do NOT add any other nameservers** (no public DNS like `1.1.1.1`) — Pi-hole handles upstream forwarding internally
 5. **Enable "Override local DNS"** — this toggle forces all Tailscale devices to use the custom nameserver, even on other networks (cellular, hotel WiFi, etc.). Without this, remote devices use their local network's DNS and Pi-hole is ignored.
 6. Save
@@ -734,11 +749,60 @@ This makes Pi-hole follow you even when you're not on your home network.
 
 Now any device connected to your Tailnet (even remotely) will use Pi-hole for DNS. Ad-blocking follows you everywhere.
 
-> **Note on the N9 host's own DNS**: The N9 itself resolves DNS via systemd-resolved → `127.0.0.1` → Pi-hole (configured in Step 4). This is separate from the Tailscale DNS setting. Other Tailscale devices (desktops, laptops, phones) use the custom nameserver set here (`100.x.x.x`). Both paths go through the same Pi-hole — ad-blocking works everywhere.
+> **Note on the N9 host's own DNS**: The N9 itself resolves DNS via systemd-resolved → `127.0.0.1` → Pi-hole (configured in Step 4). This is separate from the Tailscale DNS setting. Other Tailscale devices (desktops, laptops, phones) use the custom nameserver set here (`100.77.72.6`). Both paths go through the same Pi-hole — ad-blocking works everywhere.
 
 > **If you previously used the old approach** (disabling systemd-resolved, hardcoding `1.1.1.1`), and you switch to the new approach (Step 4), you must also run `sudo tailscale set --accept-dns=false` on the N9. This prevents Tailscale from overwriting `/etc/resolv.conf` with its MagicDNS resolver, which would bypass Pi-hole for the host itself.
 
 > **iOS-specific**: After enabling Override, go to the iPhone Tailscale app → **Settings** → **DNS** and make sure **"Use Tailscale DNS"** is ON. Also temporarily disable **iCloud Private Relay** (Settings → your name → iCloud → Private Relay) for testing, as it bypasses Tailscale DNS entirely for Safari traffic.
+
+### 13.1 Add a device to the Tailnet
+
+Install Tailscale on the device and sign in with the same Tailscale account used by the N9. The device must appear in the admin console under **Machines** before it can use Pi-hole.
+
+On Linux:
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+sudo tailscale set --accept-dns=true
+```
+
+On Windows or macOS:
+
+1. Install the Tailscale app from https://tailscale.com/download
+2. Sign in with the same account as the N9.
+3. Keep **Use Tailscale DNS** enabled in the app's DNS settings.
+
+On iOS or Android:
+
+1. Install the Tailscale app and sign in with the same account as the N9.
+2. Connect the device to Tailscale.
+3. Enable **Use Tailscale DNS** in the app settings.
+
+The N9 itself is different from the client devices. Keep Tailscale DNS disabled on N9 so its local resolver continues to use Pi-hole:
+
+```bash
+sudo tailscale set --accept-dns=false
+```
+
+### 13.2 Verify Pi-hole from a Tailscale device
+
+On a Linux client, confirm the device is connected and query a blocked domain:
+
+```bash
+tailscale status
+resolvectl query doubleclick.net
+```
+
+The result should be `0.0.0.0` or another Pi-hole blocked response. If `resolvectl` is unavailable, use `nslookup doubleclick.net` or `dig doubleclick.net`.
+
+If the query is not blocked, check these in order:
+
+1. The device is signed in to the same Tailnet and is online.
+2. **Override local DNS** is enabled in the Tailscale admin console.
+3. **Use Tailscale DNS** is enabled on the device.
+4. `100.77.72.6` is the only global nameserver; do not add a public fallback.
+5. Pi-hole is healthy: `docker inspect --format '{{.State.Health.Status}}' pihole`.
 
 ---
 
@@ -1033,7 +1097,7 @@ Then restart Emacs.
 ### Typical gotchas
 
 - **`rem_workspace` or similar wrong-named folder appears**: Edit the folder in Syncthing Web UI → **Folder Path** → change to the correct existing path
-- **"Temporary failure resolving" on homebase**: Run `resolvectl status | grep 'resolv.conf mode'` — should show `stub`, not `foreign`. Fix: `sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf && sudo systemctl restart systemd-resolved`
+- **"Temporary failure resolving" on homebase**: Verify `/etc/resolv.conf` points to `/run/systemd/resolve/resolv.conf`, `resolvectl status` shows `resolv.conf mode: uplink`, and `enp2s0` uses `127.0.0.1` as its DNS server. Restore with `sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf && sudo resolvectl dns enp2s0 127.0.0.1 && sudo resolvectl domain enp2s0 "~." && sudo systemctl restart systemd-resolved`
 - **Pi-hole stops blocking**: Check `docker exec pihole grep listeningMode /etc/pihole/pihole.toml` — must be `"ALL"`, not `"LOCAL"`
 - **Syncthing stops after SSH logout**: You missed `sudo loginctl enable-linger tlaloch` — run it now
 
@@ -1319,7 +1383,8 @@ workstation (Arch desktop)
 
 | Problem | Fix |
 |---|---|
-| **Pi-hole won't start** | Port 53 conflict. Check `sudo ss -tlnp | grep :53`. With systemd-resolved active (Step 4), there should be no conflict as it listens on `127.0.0.53`. |
+| **Pi-hole won't start** | Port 53 conflict. Check `sudo ss -lntup | grep ':53'`. `pihole-FTL` should be the only DNS listener; verify `DNSStubListener=no` in Step 4 and restart systemd-resolved before restarting Pi-hole. |
+| **Pi-hole container is unhealthy** | Check `docker inspect --format '{{range .State.Health.Log}}{{.Output}}{{end}}' pihole` and `docker logs --tail=200 pihole`. A timeout to `127.0.0.1:53` usually means systemd-resolved still owns the stub listener; apply Step 4 and restart the Compose service. |
 | **Can't mount Samba share remotely** | Make sure both devices have Tailscale running. Use the `100.x.x.x` IP, not `192.168.1.100`. |
 | **Gitea page won't load** | Wait 30 seconds after starting. Check with `docker ps` that the container is healthy. |
 | **Forgot Samba password** | `sudo smbpasswd -a yourusername` to reset it. |
