@@ -52,7 +52,7 @@ Tailscale encrypted network
 Server: <SERVER_TAILSCALE_IP>
 ```
 
-The public documentation uses placeholders instead of real addresses, credentials, device IDs, or other private infrastructure details.
+The documentation uses placeholders instead of real addresses, credentials, device IDs, or other sensitive infrastructure details.
 
 ## Skills Demonstrated
 
@@ -108,7 +108,7 @@ The documentation will identify these limitations and explain possible future im
 
 ## Privacy and Security
 
-The public documentation must not contain:
+This project must not contain:
 
 - Passwords or private keys.
 - Real router credentials.
@@ -117,8 +117,8 @@ The public documentation must not contain:
 - Unnecessary live IP addresses or hostnames.
 - Unsanitized logs or screenshots.
 
-Exact live values belong in a separate private operational runbook.
+Use placeholders for live values and remove sensitive information before sharing documentation.
 
 ## Project Status
 
-The original server guide is being reorganized into modular documentation. The core procedures will be validated and updated as each module is approved.
+This project is maintained as a modular documentation set. Core procedures are validated and updated as each module is completed.
