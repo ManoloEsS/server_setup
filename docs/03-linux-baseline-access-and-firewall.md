@@ -2,7 +2,8 @@
 
 ## Purpose
 
-This module establishes the Linux administration baseline after Ubuntu Server installation.
+This module establishes the Linux administration baseline after Ubuntu Server
+installation.
 
 It covers:
 
@@ -29,17 +30,15 @@ After completing this module, an administrator should be able to:
 
 ## Baseline Assumptions
 
-| Item | Expected value |
-|---|---|
-| Operating system | Ubuntu Server 24.04 LTS |
-| Administrative access | Named user with `sudo` access |
-| Primary interface | `<SERVER_INTERFACE>` |
-| Local network | `<LAN_CIDR>` |
-| Server LAN address | `<SERVER_LAN_IP>` |
-| Router address | `<ROUTER_LAN_IP>` |
-| Remote interface | `tailscale0`, when Tailscale is installed |
-
-Replace placeholders with values appropriate to the environment. Do not publish passwords, private keys, or unnecessary live infrastructure details.
+| Item                  | Expected value                            |
+| --------------------- | ----------------------------------------- |
+| Operating system      | Ubuntu Server 24.04 LTS                   |
+| Administrative access | Named user with `sudo` access             |
+| Primary interface     | `<SERVER_INTERFACE>`                      |
+| Local network         | `<LAN_CIDR>`                              |
+| Server LAN address    | `<SERVER_LAN_IP>`                         |
+| Router address        | `<ROUTER_LAN_IP>`                         |
+| Remote interface      | `tailscale0`, when Tailscale is installed |
 
 ## Step 1: Update the Operating System
 
@@ -63,7 +62,9 @@ lsb_release -a
 uname -r
 ```
 
-A server should be updated before additional services are installed. This reduces the chance of building services on top of outdated packages or known vulnerabilities.
+A server should be updated before additional services are installed. This
+reduces the chance of building services on top of outdated packages or known
+vulnerabilities.
 
 ## Step 2: Review the Administrative Account
 
@@ -96,7 +97,9 @@ Review local accounts when needed:
 getent passwd
 ```
 
-Avoid deleting system accounts unless their purpose is understood. Many service accounts are created for system processes and should not be treated as interactive users.
+Avoid deleting system accounts unless their purpose is understood. Many service
+accounts are created for system processes and should not be treated as
+interactive users.
 
 ## Step 3: Review Hostname, Time, Storage, and Resources
 
@@ -126,9 +129,12 @@ free -h
 uptime
 ```
 
-These checks establish a baseline before application data is stored on the server.
+These checks establish a baseline before application data is stored on the
+server.
 
-Record any capacity or hardware constraints that may affect service reliability. A server hosting file shares and containers should have enough free storage for application data, logs, updates, and backups.
+Record any capacity or hardware constraints that may affect service reliability.
+A server hosting file shares and containers should have enough free storage for
+application data, logs, updates, and backups.
 
 ## Step 4: Verify SSH Access
 
@@ -153,7 +159,8 @@ Before changing SSH or firewall configuration:
 3. Test a new SSH connection.
 4. Make changes only after confirming that a second connection works.
 
-This prevents a configuration or firewall change from locking out the active administrator.
+This prevents a configuration or firewall change from locking out the active
+administrator.
 
 ## SSH Security Baseline
 
@@ -184,7 +191,8 @@ Only restart SSH after the configuration test succeeds:
 sudo systemctl restart ssh
 ```
 
-Do not disable password authentication until a separate SSH key login has been tested successfully.
+Do not disable password authentication until a separate SSH key login has been
+tested successfully.
 
 ## Step 5: Install and Enable UFW
 
@@ -201,7 +209,8 @@ sudo ufw default deny incoming
 sudo ufw default allow outgoing
 ```
 
-Do not enable UFW until an SSH allow rule has been added and a second SSH session has been tested.
+Do not enable UFW until an SSH allow rule has been added and a second SSH
+session has been tested.
 
 ## Step 6: Define Firewall Rules
 
@@ -249,7 +258,8 @@ sudo ufw allow in on tailscale0 to any port 53 proto udp
 sudo ufw allow in on tailscale0 to any port 53 proto tcp
 ```
 
-Only add rules for services that are installed and required. Avoid opening a port globally when access can be limited to a known network or interface.
+Only add rules for services that are installed and required. Avoid opening a
+port globally when access can be limited to a known network or interface.
 
 Enable UFW after the required rules are present:
 
@@ -268,17 +278,18 @@ sudo ufw status numbered
 
 The intended policy is:
 
-| Traffic | Policy |
-|---|---|
-| Incoming connections by default | Deny |
-| Outgoing connections by default | Allow |
-| SSH from the local LAN | Allow |
-| SSH from authorized Tailscale clients | Allow |
-| Service ports from unauthorized networks | Deny |
-| DNS from the local LAN | Allow after Pi-hole is installed |
-| DNS from Tailscale clients | Allow after remote DNS is configured |
+| Traffic                                  | Policy                               |
+| ---------------------------------------- | ------------------------------------ |
+| Incoming connections by default          | Deny                                 |
+| Outgoing connections by default          | Allow                                |
+| SSH from the local LAN                   | Allow                                |
+| SSH from authorized Tailscale clients    | Allow                                |
+| Service ports from unauthorized networks | Deny                                 |
+| DNS from the local LAN                   | Allow after Pi-hole is installed     |
+| DNS from Tailscale clients               | Allow after remote DNS is configured |
 
-UFW rules should be reviewed whenever a service is added, removed, or moved to a different port.
+UFW rules should be reviewed whenever a service is added, removed, or moved to a
+different port.
 
 ## Step 7: Verify Listening Services
 
@@ -294,7 +305,9 @@ At this stage, expected listeners may include:
 - System services required by Ubuntu.
 - No application ports that have not yet been deployed.
 
-After later modules install services, verify that each listener matches the documented service port plan. A listening port alone does not prove that a service is correctly configured; test it from an appropriate client as well.
+After later modules install services, verify that each listener matches the
+documented service port plan. A listening port alone does not prove that a
+service is correctly configured; test it from an appropriate client as well.
 
 ## Step 8: Verify Local Connectivity
 
@@ -324,30 +337,32 @@ If name resolution fails, distinguish between:
 - A firewall problem.
 - An upstream connectivity problem.
 
-Do not assume that a successful ping proves that DNS or application services are working.
+Do not assume that a successful ping proves that DNS or application services are
+working.
 
 ## Verification Checklist
 
-| Check | Expected result |
-|---|---|
-| Package metadata updates | `apt update` completes without repository errors |
-| System packages updated | `apt upgrade` completes successfully |
-| Administrative account | Named user has working `sudo` access |
-| Hostname | Expected hostname is configured |
-| Time synchronization | System clock is synchronized or correctly configured |
-| Storage | Required filesystems are mounted with adequate free space |
-| SSH service | Service is active and listening on the intended port |
-| Second SSH session | New administrative connection succeeds |
-| UFW defaults | Incoming denied and outgoing allowed |
-| UFW rules | Only required service and network rules are present |
-| Local gateway | Server can reach the primary router |
-| DNS baseline | Server can resolve a known domain |
+| Check                    | Expected result                                           |
+| ------------------------ | --------------------------------------------------------- |
+| Package metadata updates | `apt update` completes without repository errors          |
+| System packages updated  | `apt upgrade` completes successfully                      |
+| Administrative account   | Named user has working `sudo` access                      |
+| Hostname                 | Expected hostname is configured                           |
+| Time synchronization     | System clock is synchronized or correctly configured      |
+| Storage                  | Required filesystems are mounted with adequate free space |
+| SSH service              | Service is active and listening on the intended port      |
+| Second SSH session       | New administrative connection succeeds                    |
+| UFW defaults             | Incoming denied and outgoing allowed                      |
+| UFW rules                | Only required service and network rules are present       |
+| Local gateway            | Server can reach the primary router                       |
+| DNS baseline             | Server can resolve a known domain                         |
 
 ## Common Problems
 
 ### SSH access is lost after enabling UFW
 
-Use the existing console or an already-open administrative session to inspect the rules:
+Use the existing console or an already-open administrative session to inspect
+the rules:
 
 ```bash
 sudo ufw status numbered
@@ -359,7 +374,8 @@ Add a correctly scoped SSH rule before removing or changing other rules:
 sudo ufw allow in from <LAN_CIDR> to any port 22 proto tcp
 ```
 
-If the server is remote and no console access is available, use the hosting or hardware management method available for the environment.
+If the server is remote and no console access is available, use the hosting or
+hardware management method available for the environment.
 
 ### UFW rule exists but traffic is still blocked
 
@@ -401,7 +417,9 @@ DNS service configuration is handled in the networking and Pi-hole modules.
 
 ### SSH password authentication is disabled too early
 
-Use a local console or an existing administrative session to restore access. SSH key authentication must be verified from a separate terminal before disabling password authentication.
+Use a local console or an existing administrative session to restore access. SSH
+key authentication must be verified from a separate terminal before disabling
+password authentication.
 
 ## Evidence To Capture
 
@@ -414,8 +432,6 @@ Capture sanitized evidence showing:
 - The UFW default policy and numbered rules.
 - Listening ports.
 - Successful gateway and DNS tests.
-
-Published evidence should use placeholders for usernames, addresses, hostnames, and other identifying values.
 
 ## Completion Criteria
 
@@ -430,4 +446,5 @@ This module is complete when:
 - Listening ports and basic connectivity are verified.
 - Sanitized baseline evidence has been recorded.
 
-Next: [Networking, DNS, and Router Configuration](04-networking-dns-and-router.md)
+Next:
+[Networking, DNS, and Router Configuration](04-networking-dns-and-router.md)

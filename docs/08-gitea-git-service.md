@@ -2,8 +2,7 @@
 
 ## Purpose
 
-This module deploys Gitea as a private Git hosting service on the Ubuntu
-server.
+This module deploys Gitea as a private Git hosting service on the Ubuntu server.
 
 It covers:
 
@@ -37,17 +36,17 @@ After completing this module, an administrator should be able to:
 
 ## Prerequisites
 
-| Requirement | Purpose |
-|---|---|
-| Ubuntu Server installed | Gitea host |
-| Working Docker Engine | Container runtime |
-| Docker Compose plugin | Service deployment |
-| Explicit `sudo` Docker access | Administrative operations |
-| Working local SSH access | Configuration and recovery |
-| Working Tailscale access | Optional remote Git access |
-| Samba and Docker storage layout | `/srv` organization |
-| Available persistent storage | Repositories and database |
-| Gitea image version selected | Reproducible deployment |
+| Requirement                     | Purpose                    |
+| ------------------------------- | -------------------------- |
+| Ubuntu Server installed         | Gitea host                 |
+| Working Docker Engine           | Container runtime          |
+| Docker Compose plugin           | Service deployment         |
+| Explicit `sudo` Docker access   | Administrative operations  |
+| Working local SSH access        | Configuration and recovery |
+| Working Tailscale access        | Optional remote Git access |
+| Samba and Docker storage layout | `/srv` organization        |
+| Available persistent storage    | Repositories and database  |
+| Gitea image version selected    | Reproducible deployment    |
 
 Complete these modules first:
 
@@ -85,30 +84,30 @@ Git client
 
 The administration and Git SSH ports are intentionally different:
 
-| Function | Port | Service |
-|---|---:|---|
-| Ubuntu server administration | 22 | System OpenSSH and Tailscale SSH |
-| Gitea web interface | 3000 | Gitea HTTP service |
-| Gitea Git operations | 222 | Gitea SSH service |
+| Function                     | Port | Service                          |
+| ---------------------------- | ---: | -------------------------------- |
+| Ubuntu server administration |   22 | System OpenSSH and Tailscale SSH |
+| Gitea web interface          | 3000 | Gitea HTTP service               |
+| Gitea Git operations         |  222 | Gitea SSH service                |
 
 This distinction prevents Git traffic from being confused with host
 administration traffic.
 
 ## Design Decisions
 
-| Decision | Reason |
-|---|---|
-| Gitea in Docker | Separates the Git service from the Ubuntu base system |
-| Pinned image version | Makes upgrades deliberate and reproducible |
-| SQLite database | Suitable for this single-server homelab |
-| Bind-mounted data | Keeps repositories and configuration persistent |
-| Root-owned Compose file | Protects service configuration |
-| No plaintext secrets in Compose | Avoids publishing credentials |
-| Web port 3000 | Matches the planned service port |
-| Git SSH port 222 | Avoids conflict with host administration SSH |
-| LAN and Tailscale access only | Prevents public Git service exposure |
-| Registration disabled after setup | Prevents uncontrolled account creation |
-| Regular backup and restore testing | Protects repositories and service configuration |
+| Decision                           | Reason                                                |
+| ---------------------------------- | ----------------------------------------------------- |
+| Gitea in Docker                    | Separates the Git service from the Ubuntu base system |
+| Pinned image version               | Makes upgrades deliberate and reproducible            |
+| SQLite database                    | Suitable for this single-server homelab               |
+| Bind-mounted data                  | Keeps repositories and configuration persistent       |
+| Root-owned Compose file            | Protects service configuration                        |
+| No plaintext secrets in Compose    | Avoids publishing credentials                         |
+| Web port 3000                      | Matches the planned service port                      |
+| Git SSH port 222                   | Avoids conflict with host administration SSH          |
+| LAN and Tailscale access only      | Prevents public Git service exposure                  |
+| Registration disabled after setup  | Prevents uncontrolled account creation                |
+| Regular backup and restore testing | Protects repositories and service configuration       |
 
 SQLite is appropriate for this small lab. A larger deployment may require an
 external database and additional application infrastructure.
@@ -235,9 +234,9 @@ services:
 For a typical first administrative user, the environment may be:
 
 ```yaml
-    environment:
-      - USER_UID=1000
-      - USER_GID=1000
+environment:
+  - USER_UID=1000
+  - USER_GID=1000
 ```
 
 Use the actual values from `id <SERVER_USER>`.
@@ -323,8 +322,7 @@ View recent logs:
 sudo docker logs --tail=200 gitea
 ```
 
-Gitea may take a short time to initialize its data directory on the first
-start.
+Gitea may take a short time to initialize its data directory on the first start.
 
 ## Step 7: Verify the Gitea Web Service
 
@@ -376,15 +374,15 @@ Open the Gitea setup page in a browser.
 
 Use the following general settings:
 
-| Setting | Recommended value |
-|---|---|
-| Database type | SQLite3 |
-| Database path | `/data/gitea/gitea.db` |
-| Server domain | `<GITEA_HOSTNAME>` |
-| SSH server port | `222` |
-| Gitea base URL | `http://<GITEA_HOSTNAME>:3000/` |
-| Registration | Disable after creating the first administrator |
-| Email service | Leave disabled unless specifically required |
+| Setting         | Recommended value                              |
+| --------------- | ---------------------------------------------- |
+| Database type   | SQLite3                                        |
+| Database path   | `/data/gitea/gitea.db`                         |
+| Server domain   | `<GITEA_HOSTNAME>`                             |
+| SSH server port | `222`                                          |
+| Gitea base URL  | `http://<GITEA_HOSTNAME>:3000/`                |
+| Registration    | Disable after creating the first administrator |
+| Email service   | Leave disabled unless specifically required    |
 
 The server domain and base URL should use a name or address that the intended
 clients can resolve and reach. If local and remote clients require different
@@ -465,13 +463,13 @@ sudo ufw status verbose
 sudo ufw status numbered
 ```
 
-Do not open ports `3000` or `222` globally when access can be scoped to the
-LAN and Tailscale interfaces.
+Do not open ports `3000` or `222` globally when access can be scoped to the LAN
+and Tailscale interfaces.
 
 ## Docker and UFW Consideration
 
-Docker may add its own NAT and forwarding rules for published ports. A
-published port may not behave exactly like a normal host service under UFW.
+Docker may add its own NAT and forwarding rules for published ports. A published
+port may not behave exactly like a normal host service under UFW.
 
 Inspect the published ports:
 
@@ -534,9 +532,8 @@ Test through Tailscale:
 ssh -p 222 git@<SERVER_TAILSCALE_IP>
 ```
 
-Gitea normally authenticates the key and refuses an interactive shell. A
-message indicating that shell access is not supported can be an expected
-result.
+Gitea normally authenticates the key and refuses an interactive shell. A message
+indicating that shell access is not supported can be an expected result.
 
 This is different from host administration:
 
@@ -608,8 +605,8 @@ Test repository access through both:
 - The local LAN address or hostname.
 - The Tailscale address or hostname.
 
-Remove the temporary verification repository or file after testing if it is
-not part of the project evidence.
+Remove the temporary verification repository or file after testing if it is not
+part of the project evidence.
 
 ## Step 14: Configure Repository Access
 
@@ -693,8 +690,8 @@ sudo docker logs --tail=100 gitea
 
 Test the web interface and Git SSH access again.
 
-A running container does not prove that the application is healthy. Confirm
-both service availability and repository access.
+A running container does not prove that the application is healthy. Confirm both
+service availability and repository access.
 
 ## Step 17: Back Up Gitea
 
@@ -735,8 +732,8 @@ sudo docker ps --filter name=gitea
 curl -I http://127.0.0.1:3000
 ```
 
-The backup destination must not be located only inside the same server or
-disk. A local archive does not protect against hardware failure.
+The backup destination must not be located only inside the same server or disk.
+A local archive does not protect against hardware failure.
 
 ## Step 18: Restore Gitea Data
 
@@ -798,8 +795,8 @@ sudo docker ps --filter name=gitea
 sudo docker logs --tail=200 gitea
 ```
 
-Confirm that the web interface, administrator account, repositories, and Git
-SSH access work.
+Confirm that the web interface, administrator account, repositories, and Git SSH
+access work.
 
 Do not delete `data-before-restore` until the restore has been validated.
 
@@ -898,30 +895,30 @@ public production deployment.
 
 ## Verification Checklist
 
-| Check | Expected result |
-|---|---|
-| Gitea directory | Persistent data directory exists |
-| Data ownership | Directory uses the selected Gitea UID and GID |
-| Image version | Compose file uses a specific version |
-| Compose validation | `docker compose config` succeeds |
-| Container startup | Gitea container is running |
-| Container logs | No unresolved startup errors |
-| Web listener | TCP port 3000 is listening |
-| Git SSH listener | TCP port 222 is listening |
-| Local web access | Gitea opens through the LAN path |
-| Remote web access | Gitea opens through Tailscale |
-| LAN firewall | Ports 3000 and 222 are LAN-scoped |
-| Tailscale firewall | Ports 3000 and 222 are Tailscale-scoped |
-| Initial administrator | Administrator can sign in |
-| Registration | Open registration is disabled unless required |
-| SSH key | Gitea accepts the configured public key |
-| Git SSH | Clone and push work through port 222 |
-| HTTP Git | Clone and push work if enabled |
-| Persistence | Data survives container restart |
-| Reboot recovery | Gitea returns after server reboot |
-| Backup | Gitea data and configuration are backed up |
-| Restore | A restore test has been completed |
-| Public exposure | No router port forwarding exists |
+| Check                 | Expected result                               |
+| --------------------- | --------------------------------------------- |
+| Gitea directory       | Persistent data directory exists              |
+| Data ownership        | Directory uses the selected Gitea UID and GID |
+| Image version         | Compose file uses a specific version          |
+| Compose validation    | `docker compose config` succeeds              |
+| Container startup     | Gitea container is running                    |
+| Container logs        | No unresolved startup errors                  |
+| Web listener          | TCP port 3000 is listening                    |
+| Git SSH listener      | TCP port 222 is listening                     |
+| Local web access      | Gitea opens through the LAN path              |
+| Remote web access     | Gitea opens through Tailscale                 |
+| LAN firewall          | Ports 3000 and 222 are LAN-scoped             |
+| Tailscale firewall    | Ports 3000 and 222 are Tailscale-scoped       |
+| Initial administrator | Administrator can sign in                     |
+| Registration          | Open registration is disabled unless required |
+| SSH key               | Gitea accepts the configured public key       |
+| Git SSH               | Clone and push work through port 222          |
+| HTTP Git              | Clone and push work if enabled                |
+| Persistence           | Data survives container restart               |
+| Reboot recovery       | Gitea returns after server reboot             |
+| Backup                | Gitea data and configuration are backed up    |
+| Restore               | A restore test has been completed             |
+| Public exposure       | No router port forwarding exists              |
 
 ## Common Problems
 
@@ -953,8 +950,8 @@ sudo systemctl status docker --no-pager
 ```
 
 Common causes include invalid Compose syntax, an incorrect image version, port
-conflicts, missing data directories, incorrect data ownership, insufficient
-disk space, and unsupported image architecture.
+conflicts, missing data directories, incorrect data ownership, insufficient disk
+space, and unsupported image architecture.
 
 ### Gitea reports a permission error
 
@@ -975,8 +972,7 @@ id <SERVER_USER>
 Compare them with the Compose environment:
 
 ```yaml
-USER_UID=<GITEA_UID>
-USER_GID=<GITEA_GID>
+USER_UID=<GITEA_UID> USER_GID=<GITEA_GID>
 ```
 
 Correct ownership only after confirming the expected container user:
@@ -1080,8 +1076,8 @@ Check:
 - The Gitea container is running.
 - The Tailscale or LAN firewall rule is present.
 
-Do not add the key to the Ubuntu administrator's `authorized_keys` file when
-the goal is Gitea Git authentication.
+Do not add the key to the Ubuntu administrator's `authorized_keys` file when the
+goal is Gitea Git authentication.
 
 ### Gitea accepts SSH but Git push fails
 
@@ -1223,22 +1219,6 @@ Capture sanitized evidence showing:
 - Backup contents without credentials.
 - A completed restore test.
 - The absence of public router port forwarding.
-
-Remove or replace:
-
-- Administrator passwords.
-- Samba or Linux passwords.
-- Gitea access tokens.
-- SSH private keys.
-- SSH public keys if they identify a real account.
-- Usernames.
-- Email addresses.
-- Live IP addresses.
-- Hostnames.
-- Repository names containing personal information.
-- Unsanitized logs.
-- Database contents.
-- Private repository contents.
 
 ## Completion Criteria
 

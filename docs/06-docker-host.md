@@ -5,8 +5,8 @@
 This module installs and validates Docker on the Ubuntu server.
 
 Docker provides the container runtime used by later service modules, including
-Gitea and Pi-hole. This module establishes the host foundation without
-deploying application-specific containers.
+Gitea and Pi-hole. This module establishes the host foundation without deploying
+application-specific containers.
 
 It covers:
 
@@ -34,15 +34,15 @@ After completing this module, an administrator should be able to:
 
 ## Prerequisites
 
-| Requirement | Purpose |
-|---|---|
-| Ubuntu Server 24.04 LTS | Docker host |
-| Working local SSH access | Administration and recovery |
-| Working Tailscale access | Optional remote administration |
-| Administrative user with `sudo` | Package and service changes |
-| Working DNS and internet access | Repository and image downloads |
-| Adequate disk space | Images, containers, logs, and application data |
-| Completed network and firewall modules | Addressing and access baseline |
+| Requirement                            | Purpose                                        |
+| -------------------------------------- | ---------------------------------------------- |
+| Ubuntu Server 24.04 LTS                | Docker host                                    |
+| Working local SSH access               | Administration and recovery                    |
+| Working Tailscale access               | Optional remote administration                 |
+| Administrative user with `sudo`        | Package and service changes                    |
+| Working DNS and internet access        | Repository and image downloads                 |
+| Adequate disk space                    | Images, containers, logs, and application data |
+| Completed network and firewall modules | Addressing and access baseline                 |
 
 Complete these modules first:
 
@@ -71,25 +71,25 @@ Ubuntu Server
 ```
 
 Application containers are separated from the Ubuntu base system. Persistent
-application data remains on the server filesystem rather than inside
-temporary container layers.
+application data remains on the server filesystem rather than inside temporary
+container layers.
 
 This module does not create the Gitea or Pi-hole Compose files. Those
 configurations belong to their individual service modules.
 
 ## Design Decisions
 
-| Decision | Reason |
-|---|---|
-| Docker's official Ubuntu repository | Provides current Docker packages and the Compose plugin |
-| Docker Engine package installation | Uses the standard supported container runtime |
-| Rootful Docker | Compatible with the planned host-networked Pi-hole deployment |
-| No Docker group membership | Avoids granting persistent access to a root-equivalent socket |
-| Explicit `sudo` commands | Makes each privileged Docker operation visible |
-| Root-owned Compose files | Protects service definitions and possible secrets |
-| `/srv/docker` for application data | Separates persistent service data from the operating system |
-| Separate service directories | Limits accidental changes between applications |
-| No application containers in this module | Keeps host setup separate from service deployment |
+| Decision                                 | Reason                                                        |
+| ---------------------------------------- | ------------------------------------------------------------- |
+| Docker's official Ubuntu repository      | Provides current Docker packages and the Compose plugin       |
+| Docker Engine package installation       | Uses the standard supported container runtime                 |
+| Rootful Docker                           | Compatible with the planned host-networked Pi-hole deployment |
+| No Docker group membership               | Avoids granting persistent access to a root-equivalent socket |
+| Explicit `sudo` commands                 | Makes each privileged Docker operation visible                |
+| Root-owned Compose files                 | Protects service definitions and possible secrets             |
+| `/srv/docker` for application data       | Separates persistent service data from the operating system   |
+| Separate service directories             | Limits accidental changes between applications                |
+| No application containers in this module | Keeps host setup separate from service deployment             |
 
 Rootful Docker is convenient for this lab but has important security
 implications. The Docker daemon runs with root-level privileges. This module
@@ -127,8 +127,8 @@ ip route
 resolvectl status
 ```
 
-Docker image downloads require working outbound connectivity and DNS. Resolve
-a known Docker domain before starting:
+Docker image downloads require working outbound connectivity and DNS. Resolve a
+known Docker domain before starting:
 
 ```bash
 resolvectl query download.docker.com
@@ -224,12 +224,12 @@ sudo apt install docker-ce docker-ce-cli containerd.io \
 
 The installed components include:
 
-| Package | Role |
-|---|---|
-| `docker-ce` | Docker Engine daemon |
-| `docker-ce-cli` | Docker command-line client |
-| `containerd.io` | Container runtime |
-| `docker-buildx-plugin` | Image build functionality |
+| Package                 | Role                                         |
+| ----------------------- | -------------------------------------------- |
+| `docker-ce`             | Docker Engine daemon                         |
+| `docker-ce-cli`         | Docker command-line client                   |
+| `containerd.io`         | Container runtime                            |
+| `docker-buildx-plugin`  | Image build functionality                    |
 | `docker-compose-plugin` | Compose integration through `docker compose` |
 
 Verify the installed versions:
@@ -401,10 +401,9 @@ sudoedit /srv/docker/pihole/docker-compose.yml
 The service modules will create their data directories and apply
 service-specific ownership and permissions.
 
-Do not recursively change ownership of all of `/srv` after containers have
-been deployed. Different services may require different users, groups, and
-permission modes. The Samba module will define the permissions required for
-`/srv/files`.
+Do not recursively change ownership of all of `/srv` after containers have been
+deployed. Different services may require different users, groups, and permission
+modes. The Samba module will define the permissions required for `/srv/files`.
 
 Review the resulting permissions:
 
@@ -452,8 +451,8 @@ Later Compose projects may create project-specific networks.
 Do not remove images, volumes, or networks until their purpose and data impact
 are understood.
 
-The following command can remove unused objects and may delete data that is
-not currently attached to a container:
+The following command can remove unused objects and may delete data that is not
+currently attached to a container:
 
 ```bash
 sudo docker system prune
@@ -479,8 +478,8 @@ For example:
 means that host port `3000` is forwarded to container port `3000`.
 
 A published port may be reachable through more interfaces than intended. Docker
-manages firewall and NAT rules for container networking, and published ports
-can bypass assumptions based only on ordinary UFW rules.
+manages firewall and NAT rules for container networking, and published ports can
+bypass assumptions based only on ordinary UFW rules.
 
 Therefore:
 
@@ -577,26 +576,26 @@ Before Docker or kernel updates:
 
 ## Verification Checklist
 
-| Check | Expected result |
-|---|---|
-| Docker repository | Official repository is configured |
-| Docker Engine | Package is installed |
-| Docker CLI | `docker --version` succeeds |
-| Compose plugin | `docker compose version` succeeds |
-| Docker service | Service is active |
-| Docker startup | Service is enabled at boot |
-| Container runtime | `containerd` is active |
-| Test container | `hello-world` completes successfully |
-| Docker daemon | `sudo docker info` succeeds |
-| Privilege model | Docker commands require explicit `sudo` |
-| Docker group access | Administrative user is not in the `docker` group |
-| Storage directories | `/srv/docker` and `/srv/files` exist |
-| Service directories | Gitea and Pi-hole parent directories exist |
-| Directory ownership | Docker configuration directories are root-owned |
-| Disk capacity | Adequate free space is available |
-| Docker networking | Default networks are visible |
-| Published ports | No unplanned application ports are exposed |
-| Firewall relationship | Docker and UFW interaction is understood |
+| Check                 | Expected result                                  |
+| --------------------- | ------------------------------------------------ |
+| Docker repository     | Official repository is configured                |
+| Docker Engine         | Package is installed                             |
+| Docker CLI            | `docker --version` succeeds                      |
+| Compose plugin        | `docker compose version` succeeds                |
+| Docker service        | Service is active                                |
+| Docker startup        | Service is enabled at boot                       |
+| Container runtime     | `containerd` is active                           |
+| Test container        | `hello-world` completes successfully             |
+| Docker daemon         | `sudo docker info` succeeds                      |
+| Privilege model       | Docker commands require explicit `sudo`          |
+| Docker group access   | Administrative user is not in the `docker` group |
+| Storage directories   | `/srv/docker` and `/srv/files` exist             |
+| Service directories   | Gitea and Pi-hole parent directories exist       |
+| Directory ownership   | Docker configuration directories are root-owned  |
+| Disk capacity         | Adequate free space is available                 |
+| Docker networking     | Default networks are visible                     |
+| Published ports       | No unplanned application ports are exposed       |
+| Firewall relationship | Docker and UFW interaction is understood         |
 
 ## Common Problems
 
@@ -752,9 +751,9 @@ Review UFW:
 sudo ufw status verbose
 ```
 
-Docker-published ports may not behave like ordinary host services under UFW.
-Use the Docker `DOCKER-USER` chain or a more restrictive binding and firewall
-design when required.
+Docker-published ports may not behave like ordinary host services under UFW. Use
+the Docker `DOCKER-USER` chain or a more restrictive binding and firewall design
+when required.
 
 ### A container starts and immediately exits
 
@@ -776,12 +775,10 @@ View its logs:
 sudo docker logs --tail=200 <CONTAINER_NAME>
 ```
 
-Check the exit code, image architecture, required environment variables,
-mounted directory permissions, port conflicts, configuration syntax, and disk
-space.
+Check the exit code, image architecture, required environment variables, mounted
+directory permissions, port conflicts, configuration syntax, and disk space.
 
-Application-specific recovery procedures belong in the relevant service
-module.
+Application-specific recovery procedures belong in the relevant service module.
 
 ### Docker does not recover correctly after reboot
 
@@ -798,8 +795,8 @@ sudo docker ps -a
 ```
 
 Inspect each Compose project's restart policy and service status. A container
-must have an appropriate restart policy to start automatically after the
-Docker daemon restarts.
+must have an appropriate restart policy to start automatically after the Docker
+daemon restarts.
 
 Do not assume that a container being present in `sudo docker ps -a` means that
 it is healthy.
@@ -842,17 +839,6 @@ Capture sanitized evidence showing:
 - Docker network list.
 - Published-port output after later services are deployed.
 - The relationship between Docker networking and UFW.
-
-Remove or replace:
-
-- Usernames.
-- Hostnames.
-- Live IP addresses.
-- Registry credentials.
-- Private repository URLs.
-- Secrets from environment variables.
-- Unsanitized logs.
-- Host-specific filesystem details that are not needed.
 
 ## Completion Criteria
 

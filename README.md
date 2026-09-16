@@ -1,10 +1,13 @@
 # Self-Hosted Server Lab
 
-A documented homelab project demonstrating Linux server administration, networking, service deployment, security, troubleshooting, and operational support.
+A documented homelab project demonstrating Linux server administration,
+networking, service deployment, security, troubleshooting, and operational
+support.
 
 ## Project Summary
 
-This project configures a small computer as a self-hosted Ubuntu Server platform. The server provides:
+This project configures a small computer as a self-hosted Ubuntu Server
+platform. The server provides:
 
 - Samba network file sharing
 - Gitea Git hosting
@@ -14,7 +17,8 @@ This project configures a small computer as a self-hosted Ubuntu Server platform
 - Tailscale remote access
 - Network-level firewall and DNS configuration
 
-The documentation is written as both a rebuildable technical reference and a portfolio of entry-level IT support skills.
+The documentation is written as both a rebuildable technical reference and a
+portfolio of entry-level IT support skills.
 
 ## Project Objectives
 
@@ -52,18 +56,19 @@ Tailscale encrypted network
 Server: <SERVER_TAILSCALE_IP>
 ```
 
-The documentation uses placeholders instead of real addresses, credentials, device IDs, or other sensitive infrastructure details.
+The documentation uses placeholders instead of real addresses, credentials,
+device IDs, or other sensitive infrastructure details.
 
 ## Skills Demonstrated
 
-| Area | Demonstrated skills |
-|---|---|
-| Linux administration | Ubuntu installation, packages, users, permissions, systemd, storage, logs, and SSH |
-| Networking | IPv4 addressing, DHCP, DNS, routing, NAT, ports, firewall rules, and VPN connectivity |
-| Service support | Samba, Gitea, Pi-hole, Docker Compose, health checks, and logs |
-| Security | Least-privilege access, SSH keys, UFW, restricted service exposure, and secret handling |
-| Troubleshooting | Reproducing symptoms, testing hypotheses, reading logs, applying fixes, and verifying results |
-| Operations | Updates, backups, recovery procedures, maintenance, documentation, and escalation boundaries |
+| Area                 | Demonstrated skills                                                                           |
+| -------------------- | --------------------------------------------------------------------------------------------- |
+| Linux administration | Ubuntu installation, packages, users, permissions, systemd, storage, logs, and SSH            |
+| Networking           | IPv4 addressing, DHCP, DNS, routing, NAT, ports, firewall rules, and VPN connectivity         |
+| Service support      | Samba, Gitea, Pi-hole, Docker Compose, health checks, and logs                                |
+| Security             | Least-privilege access, SSH keys, UFW, restricted service exposure, and secret handling       |
+| Troubleshooting      | Reproducing symptoms, testing hypotheses, reading logs, applying fixes, and verifying results |
+| Operations           | Updates, backups, recovery procedures, maintenance, documentation, and escalation boundaries  |
 
 ## Documentation Path
 
@@ -102,23 +107,14 @@ Each module records:
 
 ## Scope and Limitations
 
-This is a single-server homelab project, not a production environment. It does not provide high availability, enterprise monitoring, redundant storage, or a production service-level agreement.
+This is a single-server homelab project, not a production environment. It does
+not provide high availability, enterprise monitoring, redundant storage, or a
+production service-level agreement.
 
-The documentation will identify these limitations and explain possible future improvements rather than presenting the lab as production-ready.
-
-## Privacy and Security
-
-This project must not contain:
-
-- Passwords or private keys.
-- Real router credentials.
-- Personal usernames or email addresses.
-- Tailscale device IDs.
-- Unnecessary live IP addresses or hostnames.
-- Unsanitized logs or screenshots.
-
-Use placeholders for live values and remove sensitive information before sharing documentation.
+The documentation will identify these limitations and explain possible future
+improvements rather than presenting the lab as production-ready.
 
 ## Project Status
 
-This project is maintained as a modular documentation set. Core procedures are validated and updated as each module is completed.
+This project is maintained as a modular documentation set. Core procedures are
+validated and updated as each module is completed.

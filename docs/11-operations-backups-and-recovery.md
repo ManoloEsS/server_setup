@@ -2,8 +2,8 @@
 
 ## Purpose
 
-This module documents the recurring operational procedures for the
-self-hosted server.
+This module documents the recurring operational procedures for the self-hosted
+server.
 
 It covers:
 
@@ -443,18 +443,18 @@ Review the dry-run output before removing the `n` option.
 
 Back up the following categories:
 
-| Category | Example data |
-|---|---|
-| User files | `/srv/files` |
-| Gitea data | `/srv/docker/gitea/data` |
-| Pi-hole data | `/srv/docker/pihole/etc-pihole` |
-| Compose files | Gitea and Pi-hole Compose files |
-| Password secret | Pi-hole web password file |
-| Samba configuration | `/etc/samba/smb.conf` |
-| Resolver configuration | `/etc/systemd/resolved.conf.d/` |
-| Firewall configuration | UFW rules and defaults |
-| Docker repository configuration | Docker APT source and key |
-| Recovery documentation | This project and private operational records |
+| Category                        | Example data                                 |
+| ------------------------------- | -------------------------------------------- |
+| User files                      | `/srv/files`                                 |
+| Gitea data                      | `/srv/docker/gitea/data`                     |
+| Pi-hole data                    | `/srv/docker/pihole/etc-pihole`              |
+| Compose files                   | Gitea and Pi-hole Compose files              |
+| Password secret                 | Pi-hole web password file                    |
+| Samba configuration             | `/etc/samba/smb.conf`                        |
+| Resolver configuration          | `/etc/systemd/resolved.conf.d/`              |
+| Firewall configuration          | UFW rules and defaults                       |
+| Docker repository configuration | Docker APT source and key                    |
+| Recovery documentation          | This project and private operational records |
 
 Do not back up temporary container layers, unneeded Docker cache, private
 Tailscale state unless specifically required, unneeded system logs, or secrets
@@ -664,8 +664,8 @@ Host configuration backup: PASS / FAIL
 Restore test due: <DATE>
 ```
 
-A backup is not considered complete until its contents can be read and at
-least one restore has been tested.
+A backup is not considered complete until its contents can be read and at least
+one restore has been tested.
 
 ## Step 11: Restore an Individual File
 
@@ -773,8 +773,8 @@ sudo docker logs --tail=200 gitea
 curl -I http://127.0.0.1:3000
 ```
 
-Confirm administrator login, repository visibility, repository clone, Git SSH
-on port 222, test commit and push, and existing repository data.
+Confirm administrator login, repository visibility, repository clone, Git SSH on
+port 222, test commit and push, and existing repository data.
 
 Do not delete `data-before-restore` until the restore is validated.
 
@@ -1099,14 +1099,14 @@ requirements, Tailscale reauthentication, and manual validation time.
 
 Define a retention policy:
 
-| Backup type | Suggested retention |
-|---|---|
-| Daily backup | `<RETENTION>` |
-| Weekly backup | `<RETENTION>` |
-| Monthly backup | `<RETENTION>` |
-| Pre-update backup | Until update is validated |
-| Restore-test backup | Until test is complete |
-| Incident backup | Until incident review is complete |
+| Backup type         | Suggested retention               |
+| ------------------- | --------------------------------- |
+| Daily backup        | `<RETENTION>`                     |
+| Weekly backup       | `<RETENTION>`                     |
+| Monthly backup      | `<RETENTION>`                     |
+| Pre-update backup   | Until update is validated         |
+| Restore-test backup | Until test is complete            |
+| Incident backup     | Until incident review is complete |
 
 Adjust retention to available storage and the value of the data.
 
@@ -1137,28 +1137,28 @@ Delete old backups only after confirming:
 
 ## Verification Checklist
 
-| Check | Expected result |
-|---|---|
-| Maintenance record | Current state is recorded |
-| Package updates | Updates complete without unresolved errors |
-| Docker updates | Specific versions are recorded |
-| Service health | Required services are active |
-| Storage | Adequate free space exists |
-| Logs | Warnings and errors are reviewed |
-| Backup target | Separate target is mounted |
-| Shared files backup | Backup completes and is readable |
-| Gitea backup | Data and configuration are backed up |
-| Pi-hole backup | Data and protected secret are backed up |
+| Check                     | Expected result                                         |
+| ------------------------- | ------------------------------------------------------- |
+| Maintenance record        | Current state is recorded                               |
+| Package updates           | Updates complete without unresolved errors              |
+| Docker updates            | Specific versions are recorded                          |
+| Service health            | Required services are active                            |
+| Storage                   | Adequate free space exists                              |
+| Logs                      | Warnings and errors are reviewed                        |
+| Backup target             | Separate target is mounted                              |
+| Shared files backup       | Backup completes and is readable                        |
+| Gitea backup              | Data and configuration are backed up                    |
+| Pi-hole backup            | Data and protected secret are backed up                 |
 | Host configuration backup | Resolver, Samba, UFW, and Docker settings are backed up |
-| Individual restore | A file restore succeeds |
-| Gitea restore | Gitea restore procedure is tested |
-| Pi-hole restore | Pi-hole restore procedure is tested |
-| Reboot recovery | Services return after reboot |
-| Update rollback | Rollback procedure is documented |
-| DNS recovery | Alternate DNS procedure is documented |
-| Evidence | Results are sanitized |
-| Retention | Backup retention is defined |
-| Limitations | Single-server risks are documented |
+| Individual restore        | A file restore succeeds                                 |
+| Gitea restore             | Gitea restore procedure is tested                       |
+| Pi-hole restore           | Pi-hole restore procedure is tested                     |
+| Reboot recovery           | Services return after reboot                            |
+| Update rollback           | Rollback procedure is documented                        |
+| DNS recovery              | Alternate DNS procedure is documented                   |
+| Evidence                  | Results are sanitized                                   |
+| Retention                 | Backup retention is defined                             |
+| Limitations               | Single-server risks are documented                      |
 
 ## Evidence To Capture
 

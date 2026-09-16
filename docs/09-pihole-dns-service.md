@@ -19,8 +19,8 @@ It covers:
 - Diagnosing DNS, container, resolver, and firewall failures.
 - Backing up and restoring Pi-hole configuration.
 
-Pi-hole is a critical network dependency. If it becomes unavailable, clients
-may lose DNS resolution even when IP connectivity continues to work.
+Pi-hole is a critical network dependency. If it becomes unavailable, clients may
+lose DNS resolution even when IP connectivity continues to work.
 
 ## Learning Objectives
 
@@ -39,17 +39,17 @@ After completing this module, an administrator should be able to:
 
 ## Prerequisites
 
-| Requirement | Purpose |
-|---|---|
-| Ubuntu Server installed | Pi-hole host |
-| Working Docker Engine | Container runtime |
-| Docker Compose plugin | Service deployment |
-| Explicit `sudo` Docker access | Administrative operations |
-| Stable server LAN address | Local client DNS |
-| Working Tailscale access | Remote DNS clients |
-| Working upstream internet access | Forwarded DNS queries |
-| Completed resolver module | `systemd-resolved` planning |
-| Available persistent storage | Pi-hole configuration and databases |
+| Requirement                      | Purpose                             |
+| -------------------------------- | ----------------------------------- |
+| Ubuntu Server installed          | Pi-hole host                        |
+| Working Docker Engine            | Container runtime                   |
+| Docker Compose plugin            | Service deployment                  |
+| Explicit `sudo` Docker access    | Administrative operations           |
+| Stable server LAN address        | Local client DNS                    |
+| Working Tailscale access         | Remote DNS clients                  |
+| Working upstream internet access | Forwarded DNS queries               |
+| Completed resolver module        | `systemd-resolved` planning         |
+| Available persistent storage     | Pi-hole configuration and databases |
 
 Complete these modules first:
 
@@ -90,10 +90,10 @@ Configured upstream DNS providers
 
 The intended service ports are:
 
-| Function | Protocol and port | Intended access |
-|---|---|---|
-| DNS | UDP and TCP 53 | LAN and authorized Tailscale clients |
-| Pi-hole web interface | TCP 80 | Administrative LAN and Tailscale clients |
+| Function              | Protocol and port | Intended access                          |
+| --------------------- | ----------------- | ---------------------------------------- |
+| DNS                   | UDP and TCP 53    | LAN and authorized Tailscale clients     |
+| Pi-hole web interface | TCP 80            | Administrative LAN and Tailscale clients |
 
 Host networking means the Compose file does not use ordinary `ports:` mappings.
 Pi-hole binds directly to the host interfaces.
@@ -135,19 +135,19 @@ answering queries. Doing so can create a DNS bootstrap failure.
 
 ## Design Decisions
 
-| Decision | Reason |
-|---|---|
-| Pi-hole in Docker | Separates DNS filtering from the Ubuntu base system |
-| Host networking | Allows direct access to host ports 53 and 80 |
-| Pinned image version | Makes updates deliberate and reproducible |
-| Pi-hole v6 environment variables | Uses the current supported configuration model |
-| Root-owned Compose file | Protects service configuration |
-| Compose secret for web password | Avoids storing the password in YAML |
-| Pi-hole as client DNS | Centralizes filtering policy |
-| No public client DNS fallback | Prevents clients from bypassing filtering |
-| Tailscale DNS for remote clients | Extends filtering outside the home LAN |
-| Router DHCP for LAN DNS | Avoids manually configuring every local client |
-| No Pi-hole DHCP service | Keeps DHCP responsibility with the primary router |
+| Decision                         | Reason                                              |
+| -------------------------------- | --------------------------------------------------- |
+| Pi-hole in Docker                | Separates DNS filtering from the Ubuntu base system |
+| Host networking                  | Allows direct access to host ports 53 and 80        |
+| Pinned image version             | Makes updates deliberate and reproducible           |
+| Pi-hole v6 environment variables | Uses the current supported configuration model      |
+| Root-owned Compose file          | Protects service configuration                      |
+| Compose secret for web password  | Avoids storing the password in YAML                 |
+| Pi-hole as client DNS            | Centralizes filtering policy                        |
+| No public client DNS fallback    | Prevents clients from bypassing filtering           |
+| Tailscale DNS for remote clients | Extends filtering outside the home LAN              |
+| Router DHCP for LAN DNS          | Avoids manually configuring every local client      |
+| No Pi-hole DHCP service          | Keeps DHCP responsibility with the primary router   |
 
 The router remains the DHCP authority. Pi-hole provides DNS filtering and
 upstream query forwarding.
@@ -376,14 +376,14 @@ secrets:
 Example upstream values may be:
 
 ```yaml
-      FTLCONF_dns_upstreams: "1.1.1.1;8.8.8.8"
+FTLCONF_dns_upstreams: "1.1.1.1;8.8.8.8"
 ```
 
 Replace them with the upstream DNS providers selected for the environment.
 
-The `FTLCONF_dns_listeningMode` setting is intentionally `ALL` because
-Tailscale clients are outside the local LAN subnet. This setting must be
-verified after startup.
+The `FTLCONF_dns_listeningMode` setting is intentionally `ALL` because Tailscale
+clients are outside the local LAN subnet. This setting must be verified after
+startup.
 
 Do not add `ports:` when using `network_mode: host`. The two networking modes
 must not be combined.
@@ -700,8 +700,8 @@ Check a domain expected to be blocked:
 dig @127.0.0.1 doubleclick.net
 ```
 
-The result should contain the Pi-hole blocked response, commonly `0.0.0.0`
-or another locally configured response.
+The result should contain the Pi-hole blocked response, commonly `0.0.0.0` or
+another locally configured response.
 
 Check a permitted domain:
 
@@ -738,7 +738,8 @@ Primary DNS: <SERVER_LAN_IP>
 ```
 
 Do not configure a public secondary DNS server if every client query must pass
-through Pi-hole. A client may select the secondary resolver and bypass filtering.
+through Pi-hole. A client may select the secondary resolver and bypass
+filtering.
 
 The router may use a separate upstream DNS configuration for its own operation.
 The important client setting is the DNS server distributed through LAN DHCP.
@@ -781,8 +782,8 @@ In the Tailscale admin console:
 5. Do not add a public fallback nameserver.
 6. Save the policy.
 
-The reason for avoiding a public fallback is that remote clients may send queries
-to the public resolver instead of Pi-hole, bypassing filtering.
+The reason for avoiding a public fallback is that remote clients may send
+queries to the public resolver instead of Pi-hole, bypassing filtering.
 
 On each client:
 
@@ -1104,31 +1105,31 @@ Test both UDP and TCP DNS when investigating unusual failures.
 
 ## Verification Checklist
 
-| Check | Expected result |
-|---|---|
-| Pi-hole directory | Persistent directory exists |
-| Password secret | Root-owned and mode `0600` |
-| Image version | Compose file uses a specific version |
-| Compose validation | `docker compose config` succeeds |
-| Container startup | Pi-hole container is running |
-| Container health | Health status is healthy |
-| Port 53 ownership | Pi-hole owns TCP and UDP DNS listeners |
-| Port 80 ownership | Pi-hole web service is listening |
-| Resolver stub | `systemd-resolved` stub is not using port 53 |
-| Server DNS | Server resolves through local Pi-hole |
-| Listening mode | Pi-hole accepts LAN and Tailscale queries |
-| LAN firewall | DNS is allowed from the LAN |
-| Tailscale firewall | DNS is allowed on `tailscale0` |
-| LAN client DNS | DHCP distributes `<SERVER_LAN_IP>` |
-| LAN permitted query | Normal domains resolve |
-| LAN blocked query | Test domains are blocked |
-| Remote DNS | Tailscale client reaches Pi-hole |
-| Remote blocked query | Remote test domains are blocked |
-| Web administration | Admin UI is reachable only on intended paths |
-| Reboot recovery | Pi-hole returns after reboot |
-| Backup | Configuration and secret are backed up securely |
-| Restore | Restore test has been completed |
-| Public exposure | No router port forwarding exists |
+| Check                | Expected result                                 |
+| -------------------- | ----------------------------------------------- |
+| Pi-hole directory    | Persistent directory exists                     |
+| Password secret      | Root-owned and mode `0600`                      |
+| Image version        | Compose file uses a specific version            |
+| Compose validation   | `docker compose config` succeeds                |
+| Container startup    | Pi-hole container is running                    |
+| Container health     | Health status is healthy                        |
+| Port 53 ownership    | Pi-hole owns TCP and UDP DNS listeners          |
+| Port 80 ownership    | Pi-hole web service is listening                |
+| Resolver stub        | `systemd-resolved` stub is not using port 53    |
+| Server DNS           | Server resolves through local Pi-hole           |
+| Listening mode       | Pi-hole accepts LAN and Tailscale queries       |
+| LAN firewall         | DNS is allowed from the LAN                     |
+| Tailscale firewall   | DNS is allowed on `tailscale0`                  |
+| LAN client DNS       | DHCP distributes `<SERVER_LAN_IP>`              |
+| LAN permitted query  | Normal domains resolve                          |
+| LAN blocked query    | Test domains are blocked                        |
+| Remote DNS           | Tailscale client reaches Pi-hole                |
+| Remote blocked query | Remote test domains are blocked                 |
+| Web administration   | Admin UI is reachable only on intended paths    |
+| Reboot recovery      | Pi-hole returns after reboot                    |
+| Backup               | Configuration and secret are backed up securely |
+| Restore              | Restore test has been completed                 |
+| Public exposure      | No router port forwarding exists                |
 
 ## Evidence To Capture
 
@@ -1152,19 +1153,6 @@ Capture sanitized evidence showing:
 - Successful reboot recovery.
 - Backup and restore verification.
 - The absence of public DNS and web port forwarding.
-
-Remove or replace:
-
-- Pi-hole passwords.
-- API tokens.
-- Live IP addresses.
-- Tailscale device identifiers.
-- Router credentials.
-- Hostnames.
-- Client names.
-- Unsanitized logs.
-- Personal DNS query history.
-- Private backup paths.
 
 ## Completion Criteria
 

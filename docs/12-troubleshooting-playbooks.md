@@ -2,8 +2,8 @@
 
 ## Purpose
 
-This module provides repeatable troubleshooting procedures for the
-self-hosted server.
+This module provides repeatable troubleshooting procedures for the self-hosted
+server.
 
 Each playbook follows the same support workflow:
 
@@ -129,16 +129,16 @@ Determine whether the issue affects:
 
 Use the following order when the failure is unclear:
 
-| Layer | Questions | Useful checks |
-|---|---|---|
-| Physical | Is the server powered and connected? | Console, link lights, cables |
-| Network | Does the server have an address and route? | `ip`, `ping`, `ip route` |
-| Resolver | Can names be resolved? | `resolvectl`, `dig` |
-| Firewall | Is the traffic permitted? | `ufw`, `ss` |
-| Host service | Is the service active and listening? | `systemctl`, `ss` |
-| Container | Is the container running and healthy? | `docker ps`, logs |
-| Authentication | Are credentials and permissions valid? | Service-specific checks |
-| Data | Is persistent data present and readable? | `ls`, backups, mounts |
+| Layer          | Questions                                  | Useful checks                |
+| -------------- | ------------------------------------------ | ---------------------------- |
+| Physical       | Is the server powered and connected?       | Console, link lights, cables |
+| Network        | Does the server have an address and route? | `ip`, `ping`, `ip route`     |
+| Resolver       | Can names be resolved?                     | `resolvectl`, `dig`          |
+| Firewall       | Is the traffic permitted?                  | `ufw`, `ss`                  |
+| Host service   | Is the service active and listening?       | `systemctl`, `ss`            |
+| Container      | Is the container running and healthy?      | `docker ps`, logs            |
+| Authentication | Are credentials and permissions valid?     | Service-specific checks      |
+| Data           | Is persistent data present and readable?   | `ls`, backups, mounts        |
 
 Do not begin at the application layer when the server has no route or DNS.
 
@@ -266,8 +266,8 @@ sudo ethtool <SERVER_INTERFACE>
 Correct the physical or network configuration first. Do not change service
 configuration while the client cannot reach the server's LAN address.
 
-If the interface is down, use the appropriate network-management method for
-the installation. Confirm the change survives a reconnect or reboot.
+If the interface is down, use the appropriate network-management method for the
+installation. Confirm the change survives a reconnect or reboot.
 
 ### Verification
 
@@ -677,8 +677,8 @@ Renew the client's network lease and confirm its resolver state.
 
 ### Verification
 
-Test direct and normal resolution. Confirm the query appears in Pi-hole and
-that the client is not using a competing DNS path.
+Test direct and normal resolution. Confirm the query appears in Pi-hole and that
+the client is not using a competing DNS path.
 
 ## Playbook 9: Docker Service or Container Fails
 
@@ -716,8 +716,8 @@ sudo docker inspect <CONTAINER_NAME>
 
 ### Recovery
 
-Check the cause before restarting Docker. If the daemon is stopped and the
-cause is understood:
+Check the cause before restarting Docker. If the daemon is stopped and the cause
+is understood:
 
 ```bash
 sudo systemctl restart docker
@@ -795,8 +795,8 @@ Validate before restarting:
 sudo testparm
 ```
 
-Correct the specific failed layer. Reset a Samba password only when the
-account and authorization are confirmed:
+Correct the specific failed layer. Reset a Samba password only when the account
+and authorization are confirmed:
 
 ```bash
 sudo smbpasswd <SERVER_USER>
@@ -993,8 +993,8 @@ sudo ufw allow in on tailscale0 \
   to any port <PORT> proto tcp
 ```
 
-Review Docker's published ports and `DOCKER-USER` rules separately. Do not
-open the port globally as a first response.
+Review Docker's published ports and `DOCKER-USER` rules separately. Do not open
+the port globally as a first response.
 
 ### Verification
 
@@ -1112,8 +1112,8 @@ Repeat the reboot acceptance tests from
 
 ### Symptom
 
-A backup cannot be created, an archive is unreadable, or restored data does
-not work.
+A backup cannot be created, an archive is unreadable, or restored data does not
+work.
 
 ### Diagnostics
 
@@ -1167,8 +1167,8 @@ Record what was restored and whether the original data was preserved.
 
 ## Playbook 17: Controlled Incident Drill
 
-Use this drill to practice the support workflow without risking network-wide
-DNS service.
+Use this drill to practice the support workflow without risking network-wide DNS
+service.
 
 Stop Gitea during a maintenance window:
 

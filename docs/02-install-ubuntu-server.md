@@ -2,7 +2,8 @@
 
 ## Purpose
 
-This module documents how to install Ubuntu Server on a small-form-factor computer and establish the first administrative connection.
+This module documents how to install Ubuntu Server on a small-form-factor
+computer and establish the first administrative connection.
 
 The goal is to move from bare hardware to a reachable Linux server with:
 
@@ -12,7 +13,8 @@ The goal is to move from bare hardware to a reachable Linux server with:
 - OpenSSH enabled.
 - A verified first login over the local network.
 
-System hardening, firewall configuration, Docker, and application services are covered in later modules.
+System hardening, firewall configuration, Docker, and application services are
+covered in later modules.
 
 ## Learning Objectives
 
@@ -28,37 +30,40 @@ After completing this module, an administrator should be able to:
 
 ## Prerequisites
 
-| Requirement | Purpose |
-|---|---|
-| Small-form-factor PC or mini PC | Target server hardware |
-| Ubuntu Server 24.04 LTS image | Operating system installation source |
-| Second computer | Obtain the image and connect to the server |
-| Wired Ethernet connection | Reliable initial network access |
-| Display and keyboard | Initial installation and console login |
-| Network with DHCP enabled | Temporary address assignment during installation |
+| Requirement                     | Purpose                                          |
+| ------------------------------- | ------------------------------------------------ |
+| Small-form-factor PC or mini PC | Target server hardware                           |
+| Ubuntu Server 24.04 LTS image   | Operating system installation source             |
+| Second computer                 | Obtain the image and connect to the server       |
+| Wired Ethernet connection       | Reliable initial network access                  |
+| Display and keyboard            | Initial installation and console login           |
+| Network with DHCP enabled       | Temporary address assignment during installation |
 
-The installation media and the selected server disk must be treated as destructive operations. Confirm that any important data has been backed up and that the correct disk is selected before installation.
+The installation media and the selected server disk must be treated as
+destructive operations. Confirm that any important data has been backed up and
+that the correct disk is selected before installation.
 
 ## Installation Decisions
 
-| Decision | Reason |
-|---|---|
-| Ubuntu Server LTS | Provides a stable and well-documented server platform |
-| Wired Ethernet | Reduces connection problems during installation and service setup |
-| DHCP during installation | Allows the server to obtain temporary network settings automatically |
-| DHCP reservation later | Keeps address management centralized at the router |
-| OpenSSH server | Enables remote administration after the first boot |
-| No featured snaps initially | Keeps the base installation focused on the required server services |
-| Guided whole-disk storage | Simplifies the lab installation on a dedicated server disk |
+| Decision                    | Reason                                                               |
+| --------------------------- | -------------------------------------------------------------------- |
+| Ubuntu Server LTS           | Provides a stable and well-documented server platform                |
+| Wired Ethernet              | Reduces connection problems during installation and service setup    |
+| DHCP during installation    | Allows the server to obtain temporary network settings automatically |
+| DHCP reservation later      | Keeps address management centralized at the router                   |
+| OpenSSH server              | Enables remote administration after the first boot                   |
+| No featured snaps initially | Keeps the base installation focused on the required server services  |
+| Guided whole-disk storage   | Simplifies the lab installation on a dedicated server disk           |
 
 ## Install Ubuntu Server
 
-Install Ubuntu Server 24.04 LTS on the dedicated server disk using the standard installation media and guided storage layout. The image is available from <https://ubuntu.com/download/server>.
+Install Ubuntu Server 24.04 LTS on the dedicated server disk using the standard
+installation media and guided storage layout. The image is available from
+<https://ubuntu.com/download/server>.
 
 Use the following baseline configuration:
 
 - Wired Ethernet with DHCP enabled.
-- A descriptive hostname such as `<SERVER_HOSTNAME>`.
 - A named administrative user.
 - OpenSSH server enabled.
 - No additional featured services or snaps unless required.
@@ -71,9 +76,12 @@ Record the following values securely:
 - Temporary LAN address.
 - Default gateway.
 
-Do not place passwords, private keys, or other credentials in documentation or screenshots.
+Do not place passwords, private keys, or other credentials in documentation or
+screenshots.
 
-After installation, reboot from the internal disk and log in at the local console. The remaining sections in this module begin after the operating system is installed.
+After installation, reboot from the internal disk and log in at the local
+console. The remaining sections in this module begin after the operating system
+is installed.
 
 ## Identify the Server's Network Settings
 
@@ -102,17 +110,20 @@ Temporary LAN address: <SERVER_LAN_IP>
 Default gateway: <ROUTER_LAN_IP>
 ```
 
-The address may change until a DHCP reservation is configured. The reservation is handled in the networking and router modules.
+The address may change until a DHCP reservation is configured. The reservation
+is handled in the networking and router modules.
 
 ## Connect Over SSH
 
-From the administrative computer, connect using the server's current LAN address:
+From the administrative computer, connect using the server's current LAN
+address:
 
 ```bash
 ssh <SERVER_USER>@<SERVER_LAN_IP>
 ```
 
-On the first connection, verify the host fingerprint before accepting it. Enter the server user's password when prompted.
+On the first connection, verify the host fingerprint before accepting it. Enter
+the server user's password when prompted.
 
 After connecting, verify the session:
 
@@ -122,21 +133,23 @@ whoami
 uptime
 ```
 
-The output should identify the expected server, the expected user, and a running system.
+The output should identify the expected server, the expected user, and a running
+system.
 
 ## Initial Verification Checklist
 
-| Check | Expected result |
-|---|---|
-| Server boots without the installation media | Ubuntu starts from the internal disk |
-| Ethernet interface is active | The expected interface has a LAN address |
-| Default route exists | Traffic is routed through the primary router |
-| Hostname is correct | The configured server name is displayed |
-| SSH connection succeeds | The administrative user can connect from another computer |
-| Current user is correct | `whoami` returns the intended administrative username |
-| SSH service is available | The OpenSSH service is running |
+| Check                                       | Expected result                                           |
+| ------------------------------------------- | --------------------------------------------------------- |
+| Server boots without the installation media | Ubuntu starts from the internal disk                      |
+| Ethernet interface is active                | The expected interface has a LAN address                  |
+| Default route exists                        | Traffic is routed through the primary router              |
+| Hostname is correct                         | The configured server name is displayed                   |
+| SSH connection succeeds                     | The administrative user can connect from another computer |
+| Current user is correct                     | `whoami` returns the intended administrative username     |
+| SSH service is available                    | The OpenSSH service is running                            |
 
-The next module handles system updates, administrative baseline configuration, firewall policy, and service management.
+The next module handles system updates, administrative baseline configuration,
+firewall policy, and service management.
 
 ## Common Problems
 
@@ -171,15 +184,19 @@ Check that:
 
 ### SSH connects to the wrong system
 
-This can happen when an address was previously assigned to another device. Confirm the server's current address and verify the host fingerprint before continuing.
+This can happen when an address was previously assigned to another device.
+Confirm the server's current address and verify the host fingerprint before
+continuing.
 
 ### The password is rejected
 
-Confirm the username and keyboard layout used during installation. If the account password cannot be recovered, use the documented account recovery process rather than repeatedly guessing credentials.
+Confirm the username and keyboard layout used during installation. If the
+account password cannot be recovered, use the documented account recovery
+process rather than repeatedly guessing credentials.
 
 ## Evidence To Capture
 
-Capture sanitized evidence showing:
+Capture evidence showing:
 
 - The Ubuntu release and installation date.
 - The server hostname.
@@ -187,8 +204,6 @@ Capture sanitized evidence showing:
 - The assigned address and default route.
 - A successful SSH connection.
 - The verification output from `hostname`, `whoami`, and `uptime`.
-
-Do not include passwords, private keys, host fingerprints, personal usernames, or unnecessary live network details in published evidence.
 
 ## Completion Criteria
 
@@ -202,4 +217,5 @@ This module is complete when:
 - A remote SSH login succeeds.
 - The initial network and identity checks have been recorded.
 
-Next: [Linux Baseline, Access, and Firewall](03-linux-baseline-access-and-firewall.md)
+Next:
+[Linux Baseline, Access, and Firewall](03-linux-baseline-access-and-firewall.md)

@@ -39,17 +39,17 @@ Complete these modules first:
 
 Testing requires:
 
-| Requirement | Purpose |
-|---|---|
-| Server administrative access | Host validation |
-| Local LAN client | Local service tests |
-| Authorized Tailscale client | Remote service tests |
-| Client on another network | External access test |
-| Test Samba account | File-service validation |
-| Test Gitea repository | Git-service validation |
-| `dig` or equivalent DNS tool | DNS validation |
-| `nc` or equivalent port tool | Port validation |
-| Maintenance window | Reboot and failure testing |
+| Requirement                  | Purpose                    |
+| ---------------------------- | -------------------------- |
+| Server administrative access | Host validation            |
+| Local LAN client             | Local service tests        |
+| Authorized Tailscale client  | Remote service tests       |
+| Client on another network    | External access test       |
+| Test Samba account           | File-service validation    |
+| Test Gitea repository        | Git-service validation     |
+| `dig` or equivalent DNS tool | DNS validation             |
+| `nc` or equivalent port tool | Port validation            |
+| Maintenance window           | Reboot and failure testing |
 
 ## Test Environment Record
 
@@ -86,12 +86,12 @@ Each test should record:
 
 Use these result values:
 
-| Result | Meaning |
-|---|---|
-| PASS | Expected behavior was confirmed |
-| FAIL | Expected behavior was not confirmed |
-| BLOCKED | Test could not run because a prerequisite failed |
-| NOT APPLICABLE | Test does not apply to this environment |
+| Result         | Meaning                                          |
+| -------------- | ------------------------------------------------ |
+| PASS           | Expected behavior was confirmed                  |
+| FAIL           | Expected behavior was not confirmed              |
+| BLOCKED        | Test could not run because a prerequisite failed |
+| NOT APPLICABLE | Test does not apply to this environment          |
 
 A failed prerequisite should be corrected before dependent tests are run.
 
@@ -305,14 +305,14 @@ Expected result:
 
 Review the intended access:
 
-| Service | LAN | Tailscale | Public internet |
-|---|---|---|---|
-| Host SSH, TCP 22 | Allowed | Allowed | Denied |
-| Samba, TCP 445 | Allowed | Allowed if required | Denied |
-| Gitea web, TCP 3000 | Allowed | Allowed | Denied |
-| Gitea SSH, TCP 222 | Allowed | Allowed | Denied |
-| DNS, TCP/UDP 53 | Allowed | Allowed | Denied |
-| Pi-hole web, TCP 80 | Administrative clients | Administrative clients | Denied |
+| Service             | LAN                    | Tailscale              | Public internet |
+| ------------------- | ---------------------- | ---------------------- | --------------- |
+| Host SSH, TCP 22    | Allowed                | Allowed                | Denied          |
+| Samba, TCP 445      | Allowed                | Allowed if required    | Denied          |
+| Gitea web, TCP 3000 | Allowed                | Allowed                | Denied          |
+| Gitea SSH, TCP 222  | Allowed                | Allowed                | Denied          |
+| DNS, TCP/UDP 53     | Allowed                | Allowed                | Denied          |
+| Pi-hole web, TCP 80 | Administrative clients | Administrative clients | Denied          |
 
 ### 4.3 Listening sockets
 
@@ -871,39 +871,39 @@ planned client-impact window are available.
 
 Use a table like this for the completed test record:
 
-| ID | Test | Location | Expected result | Actual result | Status | Evidence |
-|---|---|---|---|---|---|---|
-| NET-01 | Gateway reachability | Server | Gateway responds | `<RESULT>` | PASS/FAIL | `<REF>` |
-| DNS-01 | Server permitted query | Server | Domain resolves | `<RESULT>` | PASS/FAIL | `<REF>` |
-| DNS-02 | Server blocked query | Server | Domain is blocked | `<RESULT>` | PASS/FAIL | `<REF>` |
-| FW-01 | UFW policy | Server | Expected rules exist | `<RESULT>` | PASS/FAIL | `<REF>` |
-| DOC-01 | Docker health | Server | Containers healthy | `<RESULT>` | PASS/FAIL | `<REF>` |
-| SMB-01 | LAN share access | LAN client | Authorized access works | `<RESULT>` | PASS/FAIL | `<REF>` |
-| GIT-01 | LAN Git SSH | LAN client | Clone succeeds | `<RESULT>` | PASS/FAIL | `<REF>` |
-| TS-01 | Tailscale connectivity | Remote client | Overlay responds | `<RESULT>` | PASS/FAIL | `<REF>` |
-| SMB-02 | Remote share access | Remote client | Authorized access works | `<RESULT>` | PASS/FAIL | `<REF>` |
-| GIT-02 | Remote Git SSH | Remote client | Clone succeeds | `<RESULT>` | PASS/FAIL | `<REF>` |
-| DNS-03 | Remote blocked query | Remote client | Domain is blocked | `<RESULT>` | PASS/FAIL | `<REF>` |
-| SEC-01 | Guest Samba access | Client | Access denied | `<RESULT>` | PASS/FAIL | `<REF>` |
-| SEC-02 | Public exposure review | Router/server | No port forwards | `<RESULT>` | PASS/FAIL | `<REF>` |
-| REC-01 | Reboot recovery | Server/clients | Services recover | `<RESULT>` | PASS/FAIL | `<REF>` |
-| REC-02 | Controlled failure | Server | Service recovers | `<RESULT>` | PASS/FAIL | `<REF>` |
+| ID     | Test                   | Location       | Expected result         | Actual result | Status    | Evidence |
+| ------ | ---------------------- | -------------- | ----------------------- | ------------- | --------- | -------- |
+| NET-01 | Gateway reachability   | Server         | Gateway responds        | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| DNS-01 | Server permitted query | Server         | Domain resolves         | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| DNS-02 | Server blocked query   | Server         | Domain is blocked       | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| FW-01  | UFW policy             | Server         | Expected rules exist    | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| DOC-01 | Docker health          | Server         | Containers healthy      | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| SMB-01 | LAN share access       | LAN client     | Authorized access works | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| GIT-01 | LAN Git SSH            | LAN client     | Clone succeeds          | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| TS-01  | Tailscale connectivity | Remote client  | Overlay responds        | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| SMB-02 | Remote share access    | Remote client  | Authorized access works | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| GIT-02 | Remote Git SSH         | Remote client  | Clone succeeds          | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| DNS-03 | Remote blocked query   | Remote client  | Domain is blocked       | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| SEC-01 | Guest Samba access     | Client         | Access denied           | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| SEC-02 | Public exposure review | Router/server  | No port forwards        | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| REC-01 | Reboot recovery        | Server/clients | Services recover        | `<RESULT>`    | PASS/FAIL | `<REF>`  |
+| REC-02 | Controlled failure     | Server         | Service recovers        | `<RESULT>`    | PASS/FAIL | `<REF>`  |
 
 ## Failure Interpretation
 
-| Symptom | First diagnostic layer |
-|---|---|
-| No server address | Interface, cable, DHCP, router |
-| Cannot reach gateway | Link, subnet, route, router |
-| IP works but domain fails | Resolver, Pi-hole, upstream DNS |
-| Port connection refused | Service state or listener |
-| Port times out | Firewall, route, interface, client network |
-| LAN works but Tailscale fails | Tailscale state, policy, `tailscale0`, UFW |
-| Tailscale works but service fails | Service port, Docker, UFW, application |
-| Share reachable but access denied | Samba account, group, filesystem permissions |
-| Gitea web works but Git fails | Key, port 222, repository permissions |
-| Services fail after reboot | Enablement, restart policy, dependencies |
-| Pi-hole unhealthy | Port 53 conflict, configuration, upstream DNS |
+| Symptom                            | First diagnostic layer                        |
+| ---------------------------------- | --------------------------------------------- |
+| No server address                  | Interface, cable, DHCP, router                |
+| Cannot reach gateway               | Link, subnet, route, router                   |
+| IP works but domain fails          | Resolver, Pi-hole, upstream DNS               |
+| Port connection refused            | Service state or listener                     |
+| Port times out                     | Firewall, route, interface, client network    |
+| LAN works but Tailscale fails      | Tailscale state, policy, `tailscale0`, UFW    |
+| Tailscale works but service fails  | Service port, Docker, UFW, application        |
+| Share reachable but access denied  | Samba account, group, filesystem permissions  |
+| Gitea web works but Git fails      | Key, port 222, repository permissions         |
+| Services fail after reboot         | Enablement, restart policy, dependencies      |
+| Pi-hole unhealthy                  | Port 53 conflict, configuration, upstream DNS |
 | Only some clients bypass filtering | Static DNS, VPN, encrypted DNS, private relay |
 
 Do not change multiple unrelated layers at once during troubleshooting. Test one

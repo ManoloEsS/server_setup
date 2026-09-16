@@ -36,16 +36,16 @@ After completing this module, an administrator should be able to:
 
 ## Prerequisites
 
-| Requirement | Purpose |
-|---|---|
-| Ubuntu Server installed | Samba host |
-| Working local SSH access | Administration and recovery |
-| Working Tailscale access | Optional remote file access |
-| Administrative user with `sudo` | Package and configuration changes |
-| Docker host completed | Provides the planned `/srv` layout |
-| LAN address or DHCP reservation | Local client access |
-| Tailscale address | Remote client access |
-| Available storage | Shared files and backups |
+| Requirement                     | Purpose                            |
+| ------------------------------- | ---------------------------------- |
+| Ubuntu Server installed         | Samba host                         |
+| Working local SSH access        | Administration and recovery        |
+| Working Tailscale access        | Optional remote file access        |
+| Administrative user with `sudo` | Package and configuration changes  |
+| Docker host completed           | Provides the planned `/srv` layout |
+| LAN address or DHCP reservation | Local client access                |
+| Tailscale address               | Remote client access               |
+| Available storage               | Shared files and backups           |
 
 Complete these modules first:
 
@@ -83,31 +83,31 @@ Ubuntu server
 
 The intended access paths are:
 
-| Client type | Server address | Protocol |
-|---|---|---|
-| Local client | `<SERVER_LAN_IP>` | SMB over TCP 445 |
+| Client type   | Server address          | Protocol                           |
+| ------------- | ----------------------- | ---------------------------------- |
+| Local client  | `<SERVER_LAN_IP>`       | SMB over TCP 445                   |
 | Remote client | `<SERVER_TAILSCALE_IP>` | SMB over TCP 445 through Tailscale |
 
 No router port forwarding is required.
 
 ## Design Decisions
 
-| Decision | Reason |
-|---|---|
-| Private authenticated share | Prevents anonymous access |
-| Guest access disabled | Requires an identified user |
-| SMB2 or newer | Avoids obsolete SMB1 behavior |
-| TCP 445 as the default port | Modern direct-host SMB access |
-| TCP 139 disabled unless required | Avoids legacy NetBIOS exposure |
-| Dedicated `fileshare` group | Separates file access from unrelated permissions |
-| No `force user` setting | Preserves user identity and file ownership |
-| LAN and Tailscale access only | Prevents public SMB exposure |
-| Root-owned Samba configuration | Protects service settings |
-| Separate backup procedure | A file share is not a backup |
+| Decision                         | Reason                                           |
+| -------------------------------- | ------------------------------------------------ |
+| Private authenticated share      | Prevents anonymous access                        |
+| Guest access disabled            | Requires an identified user                      |
+| SMB2 or newer                    | Avoids obsolete SMB1 behavior                    |
+| TCP 445 as the default port      | Modern direct-host SMB access                    |
+| TCP 139 disabled unless required | Avoids legacy NetBIOS exposure                   |
+| Dedicated `fileshare` group      | Separates file access from unrelated permissions |
+| No `force user` setting          | Preserves user identity and file ownership       |
+| LAN and Tailscale access only    | Prevents public SMB exposure                     |
+| Root-owned Samba configuration   | Protects service settings                        |
+| Separate backup procedure        | A file share is not a backup                     |
 
-The `force user` option is intentionally not used. It can simplify a
-single-user setup, but it causes files to appear as if they were created by one
-forced account and reduces identity separation.
+The `force user` option is intentionally not used. It can simplify a single-user
+setup, but it causes files to appear as if they were created by one forced
+account and reduces identity separation.
 
 ## Step 1: Install Samba
 
@@ -267,8 +267,8 @@ Enable the Samba account:
 sudo smbpasswd -e <SERVER_USER>
 ```
 
-Samba credentials are separate from the Linux login password. The passwords
-may be the same, but they do not have to be.
+Samba credentials are separate from the Linux login password. The passwords may
+be the same, but they do not have to be.
 
 Review Samba account entries when needed:
 
@@ -306,9 +306,8 @@ Review the existing configuration:
 sudo testparm -s
 ```
 
-Do not replace the complete configuration file unless the existing settings
-have been reviewed. Preserve unrelated global settings required by the
-environment.
+Do not replace the complete configuration file unless the existing settings have
+been reviewed. Preserve unrelated global settings required by the environment.
 
 ## Step 7: Configure the Private Share
 
@@ -354,8 +353,8 @@ Configuration notes:
 - `directory mask` controls permissions for new directories.
 - `inherit permissions` keeps new content aligned with the share directory.
 
-Do not add `force user`. It would make files appear to belong to one forced
-user and would reduce identity separation.
+Do not add `force user`. It would make files appear to belong to one forced user
+and would reduce identity separation.
 
 ## Step 8: Validate the Configuration
 
@@ -412,8 +411,8 @@ Check whether the legacy NetBIOS service is active:
 sudo systemctl status nmbd --no-pager
 ```
 
-Direct SMB access by IP address or hostname does not normally require `nmbd`.
-If legacy NetBIOS discovery is not required, it should not be enabled as an
+Direct SMB access by IP address or hostname does not normally require `nmbd`. If
+legacy NetBIOS discovery is not required, it should not be enabled as an
 additional service.
 
 ## Step 10: Configure the Firewall
@@ -692,28 +691,28 @@ valid Samba password does not override Linux filesystem permissions.
 
 ## Verification Checklist
 
-| Check | Expected result |
-|---|---|
-| Samba installed | `smbd --version` succeeds |
-| Samba service | `smbd` is active |
-| Samba startup | Service is enabled at boot |
-| Share directory | `/srv/files` exists |
-| Share ownership | Directory uses the intended owner and group |
-| Share permissions | Only authorized users have filesystem access |
-| Samba account | Intended user is enabled |
-| Guest access | Anonymous access is denied |
-| SMB protocol | SMB1 is not accepted |
-| Configuration | `testparm` reports no errors |
-| SMB listener | TCP port 445 is listening |
-| LAN firewall | TCP 445 is allowed from the LAN |
-| Tailscale firewall | TCP 445 is allowed on `tailscale0` |
-| Local test | Share works through `<SERVER_LAN_IP>` |
-| Remote test | Share works through `<SERVER_TAILSCALE_IP>` |
-| Write test | Authorized user can create and delete a test file |
-| Unauthorized test | Unapproved user is denied |
-| Client mount | CIFS mount succeeds |
-| Credentials | Client credentials file is mode `0600` |
-| Backup | Shared data backup procedure is documented |
+| Check              | Expected result                                   |
+| ------------------ | ------------------------------------------------- |
+| Samba installed    | `smbd --version` succeeds                         |
+| Samba service      | `smbd` is active                                  |
+| Samba startup      | Service is enabled at boot                        |
+| Share directory    | `/srv/files` exists                               |
+| Share ownership    | Directory uses the intended owner and group       |
+| Share permissions  | Only authorized users have filesystem access      |
+| Samba account      | Intended user is enabled                          |
+| Guest access       | Anonymous access is denied                        |
+| SMB protocol       | SMB1 is not accepted                              |
+| Configuration      | `testparm` reports no errors                      |
+| SMB listener       | TCP port 445 is listening                         |
+| LAN firewall       | TCP 445 is allowed from the LAN                   |
+| Tailscale firewall | TCP 445 is allowed on `tailscale0`                |
+| Local test         | Share works through `<SERVER_LAN_IP>`             |
+| Remote test        | Share works through `<SERVER_TAILSCALE_IP>`       |
+| Write test         | Authorized user can create and delete a test file |
+| Unauthorized test  | Unapproved user is denied                         |
+| Client mount       | CIFS mount succeeds                               |
+| Credentials        | Client credentials file is mode `0600`            |
+| Backup             | Shared data backup procedure is documented        |
 
 ## Common Problems
 
@@ -1003,19 +1002,6 @@ Capture sanitized evidence showing:
 - The protected client credentials file permissions.
 - A documented failed authentication or permission test.
 - The backup and restore procedure for shared data.
-
-Remove or replace:
-
-- Samba passwords.
-- Linux passwords.
-- Usernames.
-- Hostnames.
-- Live LAN addresses.
-- Live Tailscale addresses.
-- Client addresses.
-- Unsanitized Samba logs.
-- Private credentials files.
-- Personal filenames or document contents.
 
 ## Completion Criteria
 

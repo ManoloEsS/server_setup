@@ -32,15 +32,15 @@ After completing this module, an administrator should be able to:
 
 ## Prerequisites
 
-| Requirement | Purpose |
-|---|---|
-| Ubuntu Server installed | Target server |
-| Named administrative user | SSH administration |
-| Working local SSH access | Initial configuration and recovery |
-| Working LAN connectivity | Tailscale installation |
-| Sudo access | Service and firewall changes |
-| Tailscale account | Authorize server and clients |
-| Second computer or device | Test local and remote access |
+| Requirement               | Purpose                            |
+| ------------------------- | ---------------------------------- |
+| Ubuntu Server installed   | Target server                      |
+| Named administrative user | SSH administration                 |
+| Working local SSH access  | Initial configuration and recovery |
+| Working LAN connectivity  | Tailscale installation             |
+| Sudo access               | Service and firewall changes       |
+| Tailscale account         | Authorize server and clients       |
+| Second computer or device | Test local and remote access       |
 
 The server should already have the baseline firewall policy from
 [Linux Baseline, Access, and Firewall](03-linux-baseline-access-and-firewall.md).
@@ -72,11 +72,11 @@ Server Tailscale address
 The two paths use the same Linux user account but different authentication
 layers:
 
-| Access path | Network | SSH service | Authentication |
-|---|---|---|---|
-| Local administration | LAN | System `sshd` | Password or SSH key |
-| Remote administration | Tailscale | Tailscale SSH | Tailscale identity and policy |
-| Console recovery | Physical console | None required | Local account |
+| Access path           | Network          | SSH service   | Authentication                |
+| --------------------- | ---------------- | ------------- | ----------------------------- |
+| Local administration  | LAN              | System `sshd` | Password or SSH key           |
+| Remote administration | Tailscale        | Tailscale SSH | Tailscale identity and policy |
+| Console recovery      | Physical console | None required | Local account                 |
 
 Tailscale SSH does not modify `/etc/ssh/sshd_config` or
 `~/.ssh/authorized_keys`. Local LAN connections continue to use the normal
@@ -84,14 +84,14 @@ OpenSSH service.
 
 ## Design Decisions
 
-| Decision | Reason |
-|---|---|
-| Standard OpenSSH on the LAN | Provides a conventional administration and recovery path |
-| Tailscale SSH remotely | Uses centralized identity-based access |
-| No public SSH port forwarding | Reduces internet exposure |
-| UFW rules scoped by interface | Separates LAN and Tailscale access |
-| SSH keys for local administration | Demonstrates conventional Linux access management |
-| Tailscale policy for remote administration | Allows centralized access and revocation |
+| Decision                                   | Reason                                                   |
+| ------------------------------------------ | -------------------------------------------------------- |
+| Standard OpenSSH on the LAN                | Provides a conventional administration and recovery path |
+| Tailscale SSH remotely                     | Uses centralized identity-based access                   |
+| No public SSH port forwarding              | Reduces internet exposure                                |
+| UFW rules scoped by interface              | Separates LAN and Tailscale access                       |
+| SSH keys for local administration          | Demonstrates conventional Linux access management        |
+| Tailscale policy for remote administration | Allows centralized access and revocation                 |
 
 Tailscale membership does not replace Linux permissions. The requested Linux
 user must already exist on the server.
@@ -126,8 +126,8 @@ whoami
 ip -br address
 ```
 
-The output should identify the expected server, administrative user, and
-network interfaces.
+The output should identify the expected server, administrative user, and network
+interfaces.
 
 Before changing firewall or SSH settings:
 
@@ -255,16 +255,16 @@ sudo tailscale set --ssh
 ```
 
 Run this command from the local LAN SSH session or the server console rather
-than from an existing SSH session using the server's Tailscale address.
-Enabling Tailscale SSH can interrupt existing Tailscale SSH connections.
+than from an existing SSH session using the server's Tailscale address. Enabling
+Tailscale SSH can interrupt existing Tailscale SSH connections.
 
 Tailscale SSH takes over port `22` only for traffic arriving through the
-Tailscale interface. The standard OpenSSH service continues to handle local
-LAN connections.
+Tailscale interface. The standard OpenSSH service continues to handle local LAN
+connections.
 
 Tailscale SSH uses Tailscale node identity and tailnet policy for
-authentication. It does not require copying a client public key into the
-server user's `authorized_keys` file.
+authentication. It does not require copying a client public key into the server
+user's `authorized_keys` file.
 
 Confirm the Tailscale state:
 
@@ -284,8 +284,8 @@ Review the tailnet policy in the Tailscale admin console under **Access
 controls**.
 
 If the tailnet uses a custom policy, ensure it contains an equivalent network
-grant and SSH rule. Use the actual identity, device, tag, and Linux username
-for the environment.
+grant and SSH rule. Use the actual identity, device, tag, and Linux username for
+the environment.
 
 Example policy structure:
 
@@ -309,8 +309,8 @@ Example policy structure:
 }
 ```
 
-The `check` action requires periodic reauthentication. An `accept` action can
-be used when repeated identity checks are not required.
+The `check` action requires periodic reauthentication. An `accept` action can be
+used when repeated identity checks are not required.
 
 Do not replace an existing tailnet policy with this example without reviewing
 the complete policy first. Preserve unrelated network and device rules.
@@ -332,13 +332,13 @@ sudo ufw status numbered
 
 The intended policy is:
 
-| Traffic | Expected policy |
-|---|---|
-| Incoming traffic by default | Deny |
-| Outgoing traffic by default | Allow |
-| SSH from local LAN | Allow |
-| SSH through `tailscale0` | Allow |
-| SSH from other interfaces | Deny unless specifically required |
+| Traffic                     | Expected policy                   |
+| --------------------------- | --------------------------------- |
+| Incoming traffic by default | Deny                              |
+| Outgoing traffic by default | Allow                             |
+| SSH from local LAN          | Allow                             |
+| SSH through `tailscale0`    | Allow                             |
+| SSH from other interfaces   | Deny unless specifically required |
 
 Verify the system SSH listener:
 
@@ -374,8 +374,7 @@ Test the LAN SSH port if needed:
 nc -vz <SERVER_LAN_IP> 22
 ```
 
-A successful port test confirms reachability, but not successful
-authentication.
+A successful port test confirms reachability, but not successful authentication.
 
 ## Step 10: Test Remote Administration
 
@@ -416,8 +415,8 @@ A successful connection confirms:
 
 ## Step 11: Test From Outside the Home LAN
 
-Use an authorized client on another network, such as a phone hotspot or
-another trusted connection.
+Use an authorized client on another network, such as a phone hotspot or another
+trusted connection.
 
 Confirm:
 
@@ -441,8 +440,7 @@ after login.
 ## Optional: Local SSH Key Authentication
 
 Tailscale SSH does not require normal SSH key distribution for remote
-connections. SSH keys can still be configured for the standard LAN OpenSSH
-path.
+connections. SSH keys can still be configured for the standard LAN OpenSSH path.
 
 Generate a key on the local administration client if necessary:
 
@@ -465,8 +463,8 @@ ssh <SERVER_USER>@<SERVER_LAN_IP>
 This key is used by standard OpenSSH connections. It is not the authentication
 mechanism used by Tailscale SSH.
 
-Do not disable password authentication until a separate key-based login has
-been tested successfully and a recovery path is available.
+Do not disable password authentication until a separate key-based login has been
+tested successfully and a recovery path is available.
 
 ## Security Considerations
 
@@ -483,22 +481,22 @@ been tested successfully and a recovery path is available.
 
 ## Verification Checklist
 
-| Check | Expected result |
-|---|---|
-| Local SSH service | System `sshd` is active and listening |
-| LAN firewall rule | SSH is allowed from `<LAN_CIDR>` |
-| Local SSH login | Login succeeds through `<SERVER_LAN_IP>` |
-| Tailscale installed | `tailscale version` returns successfully |
-| Tailscale service | `tailscaled` is active |
-| Tailscale authorization | Server appears in `tailscale status` |
-| Tailscale interface | `tailscale0` is present |
-| Tailscale SSH | `sudo tailscale set --ssh` succeeds |
-| Tailnet policy | Network and SSH access are permitted |
-| Tailscale firewall rule | SSH is allowed on `tailscale0` |
-| Remote SSH login | Login succeeds through `<SERVER_TAILSCALE_IP>` |
-| External test | Remote login works outside the home LAN |
-| Recovery path | Local LAN or console access remains available |
-| Public exposure | No router SSH port forward exists |
+| Check                   | Expected result                                |
+| ----------------------- | ---------------------------------------------- |
+| Local SSH service       | System `sshd` is active and listening          |
+| LAN firewall rule       | SSH is allowed from `<LAN_CIDR>`               |
+| Local SSH login         | Login succeeds through `<SERVER_LAN_IP>`       |
+| Tailscale installed     | `tailscale version` returns successfully       |
+| Tailscale service       | `tailscaled` is active                         |
+| Tailscale authorization | Server appears in `tailscale status`           |
+| Tailscale interface     | `tailscale0` is present                        |
+| Tailscale SSH           | `sudo tailscale set --ssh` succeeds            |
+| Tailnet policy          | Network and SSH access are permitted           |
+| Tailscale firewall rule | SSH is allowed on `tailscale0`                 |
+| Remote SSH login        | Login succeeds through `<SERVER_TAILSCALE_IP>` |
+| External test           | Remote login works outside the home LAN        |
+| Recovery path           | Local LAN or console access remains available  |
+| Public exposure         | No router SSH port forward exists              |
 
 ## Common Problems
 
@@ -620,8 +618,8 @@ ip -br address
 ip route
 ```
 
-Confirm that the client is connected to the intended LAN and that the server
-has the expected LAN address.
+Confirm that the client is connected to the intended LAN and that the server has
+the expected LAN address.
 
 ### Enabling Tailscale SSH interrupts an existing connection
 
@@ -671,17 +669,6 @@ Capture sanitized evidence showing:
 - A successful Tailscale SSH login.
 - A successful test from outside the home LAN.
 - The absence of public router port forwarding.
-
-Remove or replace:
-
-- Live Tailscale IP addresses.
-- Device IDs.
-- Account names and email addresses.
-- Host fingerprints.
-- Usernames.
-- Private keys.
-- Authentication URLs.
-- Unsanitized logs.
 
 ## Completion Criteria
 
