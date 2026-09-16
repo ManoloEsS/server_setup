@@ -1,4 +1,4 @@
-# Self-Hosted Server Lab
+# Linux Server & Network Infrastructure Lab
 
 A documented homelab project demonstrating Linux server administration,
 networking, service deployment, security, troubleshooting, and operational
